@@ -220,7 +220,7 @@
                     <i class="fas fa-cash-register fa-fw"></i> Control de Caja
                 </a>
                 <a href="{{ route('pos.index') }}" class="nav-link-custom {{ request()->routeIs('pos.index') ? 'active' : '' }}">
-                    <i class="fas fa-shopping-cart fa-fw"></i> Punto de Venta (POS)
+                    <i class="fas fa-shopping-cart fa-fw"></i> Punto de Venta
                 </a>
                 <a href="{{ route('pos.historial') }}" class="nav-link-custom {{ request()->routeIs('pos.historial') ? 'active' : '' }}">
                     <i class="fas fa-receipt fa-fw"></i> Historial de Ventas
