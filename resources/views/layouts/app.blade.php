@@ -39,6 +39,32 @@
             top: 0;
             z-index: 1040;
         }
+        .sidebar-logo-pill {
+            background: #0B0F19;
+            width: 100%;
+            max-width: 238px;
+            height: 50px;
+            border-radius: 12px;
+            padding: 6px 16px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+        }
+        .sidebar-logo-pill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+        .sidebar-logo-img {
+            max-height: 38px;
+            max-width: 100%;
+            width: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
         #page-content-wrapper {
             flex: 1;
             min-width: 0;
@@ -145,11 +171,11 @@
     <!-- Sidebar -->
     <aside id="sidebar-wrapper" class="d-flex flex-column">
         <!-- Logo / Marca -->
-        <div class="p-3 border-bottom d-flex align-items-center justify-content-between">
-            <a href="{{ route('dashboard') }}" class="d-flex align-items-center text-decoration-none">
+        <div class="px-3 py-3 border-bottom position-relative d-flex align-items-center justify-content-center" style="min-height: 72px;">
+            <a href="{{ route('dashboard') }}" class="d-flex align-items-center justify-content-center text-decoration-none w-100">
                 @if(!empty($config->logo) && file_exists(public_path('img/' . $config->logo)))
-                    <div class="bg-dark rounded-3 px-3 py-1 shadow-sm d-inline-flex align-items-center" style="max-height: 44px;">
-                        <img src="/img/{{ $config->logo }}?v={{ time() }}" alt="{{ $config->nombre_sistema ?? 'CULTURA FIT' }}" style="max-height: 34px; width: auto; max-width: 155px; object-fit: contain;">
+                    <div class="sidebar-logo-pill">
+                        <img src="/img/{{ $config->logo }}?v={{ time() }}" alt="{{ $config->nombre_sistema ?? 'CULTURA FIT' }}" class="sidebar-logo-img">
                     </div>
                 @else
                     <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 36px; height: 36px;">
@@ -158,7 +184,7 @@
                     <span class="fw-extrabold fs-5 tracking-tight text-primary">{{ $config->nombre_sistema ?? 'CULTURA FIT' }}</span>
                 @endif
             </a>
-            <button class="btn btn-sm btn-light d-lg-none" id="close-sidebar-btn">
+            <button class="btn btn-sm btn-light d-lg-none position-absolute end-0 me-3" id="close-sidebar-btn" aria-label="Cerrar menú">
                 <i class="fas fa-times text-muted"></i>
             </button>
         </div>
