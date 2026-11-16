@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
+use App\Models\DetalleVenta;
 use App\Models\Socio;
+use App\Models\Venta;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class SociosController extends Controller
@@ -100,5 +103,46 @@ class SociosController extends Controller
         $socio->save();
 
         return redirect()->route('socios.index')->with('success', 'Estado del socio cambiado.');
+    }
+
+    /**
+     * Muestra el historial completo de ventas / compras realizadas a un cliente.
+     */
+    public function ventas($socioId)
+    {
+        $config = Configuracion::getInfo();
+        $socio = Socio::findOrFail($socioId);
+
+        $ventas = Venta::with(['caja.usuario', 'detalles.producto'])
+            ->where('socio_id', $socioId)
+            ->orderBy('fecha', 'desc')
+            ->paginate(15);
+
+        $totalComprado = (float) Venta::where('socio_id', $socioId)->sum('total');
+        $cantVentas = Venta::where('socio_id', $socioId)->count();
+        $ticketPromedio = $cantVentas > 0 ? $totalComprado / $cantVentas : 0;
+        $ultimaVenta = Venta::where('socio_id', $socioId)->orderBy('fecha', 'desc')->first();
+
+        // Top suplementos/productos adquiridos por este cliente
+        $topProductos = DetalleVenta::whereHas('venta', function ($q) use ($socioId) {
+                $q->where('socio_id', $socioId);
+            })
+            ->select('producto_id', DB::raw('SUM(cantidad) as total_cantidad'), DB::raw('SUM(subtotal) as total_gastado'))
+            ->with('producto')
+            ->groupBy('producto_id')
+            ->orderByDesc('total_cantidad')
+            ->limit(5)
+            ->get();
+
+        return view('socios.ventas', compact(
+            'config',
+            'socio',
+            'ventas',
+            'totalComprado',
+            'cantVentas',
+            'ticketPromedio',
+            'ultimaVenta',
+            'topProductos'
+        ));
     }
 }

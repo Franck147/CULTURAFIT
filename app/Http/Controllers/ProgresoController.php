@@ -13,38 +13,7 @@ class ProgresoController extends Controller
 {
     public function ver($socioId)
     {
-        $config = Configuracion::getInfo();
-        $socio = Socio::with(['medidas', 'ultimaRutina'])->findOrFail($socioId);
-
-        $medidas = $socio->medidas;
-        $rutina = $socio->ultimaRutina;
-
-        // Datos para gráfico interactivo
-        $chartLabels = [];
-        $dataPeso = [];
-        $dataGrasa = [];
-        $dataCintura = [];
-        $dataBrazo = [];
-
-        foreach ($medidas as $m) {
-            $chartLabels[] = $m->fecha->format('d/m/Y');
-            $dataPeso[] = $m->peso ? (float)$m->peso : null;
-            $dataGrasa[] = $m->grasa ? (float)$m->grasa : null;
-            $dataCintura[] = $m->cintura ? (float)$m->cintura : null;
-            $dataBrazo[] = $m->brazo ? (float)$m->brazo : null;
-        }
-
-        return view('progreso.ver', compact(
-            'config',
-            'socio',
-            'medidas',
-            'rutina',
-            'chartLabels',
-            'dataPeso',
-            'dataGrasa',
-            'dataCintura',
-            'dataBrazo'
-        ));
+        return redirect()->route('socios.ventas', $socioId);
     }
 
     public function guardarMedida(Request $request)

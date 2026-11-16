@@ -66,9 +66,9 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end gap-1">
-                                        <!-- Ver Progreso y Rutinas -->
-                                        <a href="{{ route('progreso.ver', $s->id) }}" class="btn btn-sm btn-light text-primary rounded-pill px-3 fw-semibold" title="Ver Progreso y Rutina">
-                                            <i class="fas fa-chart-line me-1"></i> Progreso
+                                        <!-- Ver Historial de Ventas del Cliente -->
+                                        <a href="{{ route('socios.ventas', $s->id) }}" class="btn btn-sm btn-light text-primary rounded-pill px-3 fw-semibold" title="Ver Historial de Ventas del Cliente">
+                                            <i class="fas fa-shopping-bag me-1"></i> Ventas
                                         </a>
 
                                         <!-- Editar Socio -->

@@ -35,9 +35,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // --- MÓDULO SOCIOS (Todos los roles acceden a consulta) ---
+    // --- MÓDULO CLIENTES ---
     Route::prefix('socios')->name('socios.')->group(function () {
         Route::get('/', [SociosController::class, 'index'])->name('index');
+        Route::get('/ventas/{socioId}', [SociosController::class, 'ventas'])->name('ventas');
         
         // Operaciones de gestión (Admin y Cajero)
         Route::middleware(['rol:admin,cajero'])->group(function () {
@@ -49,9 +50,9 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
-    // --- MÓDULO PROGRESO Y RUTINAS (Entrenadores y Admin) ---
+    // --- MÓDULO HISTORIAL DE VENTAS (COMPATIBILIDAD CON RUTA ANTERIOR) ---
     Route::prefix('progreso')->name('progreso.')->group(function () {
-        Route::get('/ver/{socioId}', [ProgresoController::class, 'ver'])->name('ver');
+        Route::get('/ver/{socioId}', [SociosController::class, 'ventas'])->name('ver');
         Route::post('/guardar-medida', [ProgresoController::class, 'guardarMedida'])->name('guardar-medida');
         Route::post('/guardar-rutina', [ProgresoController::class, 'guardarRutina'])->name('guardar-rutina');
         Route::post('/eliminar-medida/{id}', [ProgresoController::class, 'eliminarMedida'])->name('eliminar-medida');
