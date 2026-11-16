@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Configuracion;
 use App\Models\Gasto;
 use App\Models\Socio;
+use App\Models\Sucursal;
 use App\Models\User;
 use App\Models\Venta;
 use Carbon\Carbon;
@@ -47,16 +48,23 @@ class ReportesController extends Controller
 
         $cajeroId = $request->input('cajero_id');
         $metodoPago = $request->input('metodo_pago');
+        $sucursalId = $request->input('sucursal_id', session('sucursal_activa_id'));
 
-        // 2. Lista de Cajeros / Usuarios para el selector
+        // 2. Lista de Cajeros y Sucursales para los selectores
         $cajeros = User::whereIn('rol', ['admin', 'cajero'])
             ->orderBy('nombre', 'asc')
             ->get();
 
+        $sucursales = Sucursal::where('estado', 'activo')->orderBy('nombre', 'asc')->get();
+
         // 3. Query Base de Ventas con Filtros
-        $ventasQuery = Venta::with(['caja.usuario', 'socio', 'detalles.producto'])
+        $ventasQuery = Venta::with(['caja.usuario', 'caja.sucursal', 'socio', 'sucursal', 'detalles.producto'])
             ->whereDate('fecha', '>=', $desde)
             ->whereDate('fecha', '<=', $hasta);
+
+        if (!empty($sucursalId) && $sucursalId !== 'todas') {
+            $ventasQuery->where('sucursal_id', $sucursalId);
+        }
 
         if (!empty($cajeroId)) {
             $ventasQuery->whereHas('caja', function ($q) use ($cajeroId) {
@@ -83,6 +91,10 @@ class ReportesController extends Controller
             ->whereDate('fecha', '>=', $desde)
             ->whereDate('fecha', '<=', $hasta)
             ->where('estado', '!=', 'anulado');
+
+        if (!empty($sucursalId) && $sucursalId !== 'todas') {
+            $gastosQuery->whereHas('caja', fn($q) => $q->where('sucursal_id', $sucursalId));
+        }
 
         if (!empty($cajeroId)) {
             $gastosQuery->where('usuario_id', $cajeroId);
@@ -182,6 +194,8 @@ class ReportesController extends Controller
             'preset',
             'cajeroId',
             'metodoPago',
+            'sucursalId',
+            'sucursales',
             'cajeros',
             'ventas',
             'gastos',
@@ -210,10 +224,15 @@ class ReportesController extends Controller
         $hasta = $request->input('hasta', Carbon::now()->format('Y-m-d'));
         $cajeroId = $request->input('cajero_id');
         $metodoPago = $request->input('metodo_pago');
+        $sucursalId = $request->input('sucursal_id', session('sucursal_activa_id'));
 
-        $query = Venta::with(['caja.usuario', 'socio', 'detalles.producto'])
+        $query = Venta::with(['caja.usuario', 'caja.sucursal', 'socio', 'sucursal', 'detalles.producto'])
             ->whereDate('fecha', '>=', $desde)
             ->whereDate('fecha', '<=', $hasta);
+
+        if (!empty($sucursalId) && $sucursalId !== 'todas') {
+            $query->where('sucursal_id', $sucursalId);
+        }
 
         if (!empty($cajeroId)) {
             $query->whereHas('caja', function ($q) use ($cajeroId) {
@@ -240,6 +259,7 @@ class ReportesController extends Controller
                 'NRO TICKET',
                 'FECHA',
                 'HORA',
+                'SUCURSAL',
                 'CAJERO',
                 'ROL CAJERO',
                 'CLIENTE / SOCIO',
@@ -253,6 +273,7 @@ class ReportesController extends Controller
             ], ';');
 
             foreach ($ventas as $v) {
+                $sucursalNombre = $v->sucursal ? $v->sucursal->nombre : 'Sede Principal';
                 $cajeroNombre = $v->caja && $v->caja->usuario ? $v->caja->usuario->nombre : 'N/A';
                 $cajeroRol = $v->caja && $v->caja->usuario ? ucfirst($v->caja->usuario->rol) : 'N/A';
                 $clienteNombre = $v->socio ? $v->socio->nombre : 'Venta Directa';
@@ -270,6 +291,7 @@ class ReportesController extends Controller
                     '#' . str_pad($v->id, 6, '0', STR_PAD_LEFT),
                     $v->fecha->format('d/m/Y'),
                     $v->fecha->format('H:i:s'),
+                    $sucursalNombre,
                     $cajeroNombre,
                     $cajeroRol,
                     $clienteNombre,

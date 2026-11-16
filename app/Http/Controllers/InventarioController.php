@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Categoria;
 use App\Models\Configuracion;
+use App\Models\InventarioSucursal;
 use App\Models\Producto;
+use App\Models\Sucursal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -47,10 +49,13 @@ class InventarioController extends Controller
     public function productos()
     {
         $config = Configuracion::getInfo();
-        $productos = Producto::with('categoria')->orderBy('nombre', 'asc')->get();
+        $sucursales = Sucursal::where('estado', 'activo')->orderBy('es_principal', 'desc')->orderBy('nombre', 'asc')->get();
+        $sucursalActivaId = session('sucursal_activa_id');
+
+        $productos = Producto::with(['categoria', 'inventarios.sucursal'])->orderBy('nombre', 'asc')->get();
         $categorias = Categoria::where('estado', 'activo')->orderBy('nombre', 'asc')->get();
 
-        return view('inventario.productos', compact('config', 'productos', 'categorias'));
+        return view('inventario.productos', compact('config', 'productos', 'categorias', 'sucursales', 'sucursalActivaId'));
     }
 
     public function guardarProducto(Request $request)
@@ -63,6 +68,7 @@ class InventarioController extends Controller
             'precio_compra' => ['required', 'numeric', 'min:0'],
             'precio_venta' => ['required', 'numeric', 'min:0'],
             'stock' => ['nullable', 'integer', 'min:0'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'], // Validación estricta anti-RCE
         ]);
 
@@ -72,7 +78,6 @@ class InventarioController extends Controller
             'nombre' => $validated['nombre'],
             'precio_compra' => $validated['precio_compra'],
             'precio_venta' => $validated['precio_venta'],
-            'stock' => $validated['stock'] ?? 0,
         ];
 
         if ($request->hasFile('foto')) {
@@ -82,7 +87,23 @@ class InventarioController extends Controller
             $data['foto'] = $fileName;
         }
 
-        Producto::updateOrCreate(['id' => $validated['id'] ?? null], $data);
+        $esNuevo = empty($validated['id']);
+        $producto = Producto::updateOrCreate(['id' => $validated['id'] ?? null], $data);
+
+        // Si es producto nuevo, inicializar inventario en las sucursales
+        if ($esNuevo) {
+            $sucursales = Sucursal::where('estado', 'activo')->get();
+            $targetSucursalId = $request->sucursal_id ?: (session('sucursal_activa_id') ?: optional(Sucursal::principal())->id);
+            $stockInicial = max(0, (int)($request->stock ?? 0));
+
+            foreach ($sucursales as $suc) {
+                InventarioSucursal::updateOrCreate(
+                    ['producto_id' => $producto->id, 'sucursal_id' => $suc->id],
+                    ['stock' => ($suc->id == $targetSucursalId) ? $stockInicial : 0, 'stock_minimo' => 5]
+                );
+            }
+            $producto->sincronizarStockTotal();
+        }
 
         return redirect()->route('inventario.productos')->with('success', 'Producto guardado exitosamente.');
     }
@@ -100,22 +121,32 @@ class InventarioController extends Controller
     {
         $request->validate([
             'producto_id' => ['required', 'exists:productos,id'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
             'cantidad' => ['required', 'integer', 'min:1'],
             'operacion' => ['required', 'in:sumar,restar'],
         ]);
 
         $producto = Producto::findOrFail($request->producto_id);
+        $sucursalId = $request->sucursal_id ?: (session('sucursal_activa_id') ?: optional(Sucursal::principal())->id);
+        $sucursal = Sucursal::findOrFail($sucursalId);
 
-        if ($request->operacion === 'restar' && $producto->stock < $request->cantidad) {
-            return redirect()->route('inventario.productos')->with('error', 'No puedes restar más stock del existente.');
+        $inv = InventarioSucursal::firstOrCreate(
+            ['producto_id' => $producto->id, 'sucursal_id' => $sucursalId],
+            ['stock' => 0, 'stock_minimo' => 5]
+        );
+
+        if ($request->operacion === 'restar' && $inv->stock < $request->cantidad) {
+            return redirect()->route('inventario.productos')->with('error', "No puedes restar {$request->cantidad} unidades. Stock disponible en {$sucursal->nombre}: {$inv->stock}.");
         }
 
         if ($request->operacion === 'sumar') {
-            $producto->increment('stock', $request->cantidad);
+            $inv->increment('stock', $request->cantidad);
         } else {
-            $producto->decrement('stock', $request->cantidad);
+            $inv->decrement('stock', $request->cantidad);
         }
 
-        return redirect()->route('inventario.productos')->with('success', 'Stock ajustado con éxito.');
+        $producto->sincronizarStockTotal();
+
+        return redirect()->route('inventario.productos')->with('success', "Stock de '{$producto->nombre}' actualizado con éxito en {$sucursal->nombre} (Nuevo stock local: {$inv->stock}).");
     }
 }

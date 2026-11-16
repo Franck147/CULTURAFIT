@@ -202,6 +202,51 @@
             </div>
         </div>
 
+        <!-- Selector de Sucursal Activa (Multi-Sucursal Switcher) -->
+        @php
+            $todasLasSucursales = \App\Models\Sucursal::where('estado', 'activo')->orderBy('es_principal', 'desc')->orderBy('nombre', 'asc')->get();
+            $sucursalSeleccionadaId = session('sucursal_activa_id');
+            $sucursalSeleccionada = $todasLasSucursales->firstWhere('id', $sucursalSeleccionadaId);
+        @endphp
+
+        @if(auth()->user()->esAdmin())
+            <div class="px-3 py-2 border-bottom bg-white">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <span class="text-secondary small fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                        <i class="fas fa-store text-primary me-1"></i> Sucursal Activa
+                    </span>
+                    @if($sucursalSeleccionada)
+                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-0" style="font-size: 0.65rem;">Filtrada</span>
+                    @else
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-2 py-0" style="font-size: 0.65rem;">Global</span>
+                    @endif
+                </div>
+                <form action="{{ route('sucursales.cambiar-contexto') }}" method="POST">
+                    @csrf
+                    <select name="sucursal_contexto_id" class="form-select form-select-sm rounded-pill border fw-bold text-dark shadow-xs" onchange="this.form.submit()" style="font-size: 0.8rem; background-color: #F8FAFC; cursor: pointer;">
+                        <option value="todas" {{ empty($sucursalSeleccionadaId) ? 'selected' : '' }}>
+                            🌐 Todas las Sucursales (Global)
+                        </option>
+                        @foreach($todasLasSucursales as $sucOpt)
+                            <option value="{{ $sucOpt->id }}" {{ $sucursalSeleccionadaId == $sucOpt->id ? 'selected' : '' }}>
+                                📍 {{ $sucOpt->nombre }} {{ $sucOpt->es_principal ? '⭐' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                </form>
+            </div>
+        @elseif(auth()->user()->sucursal)
+            <div class="px-3 py-2 border-bottom bg-white">
+                <div class="small text-muted fw-bold text-uppercase mb-1" style="font-size: 0.7rem;">
+                    <i class="fas fa-store text-primary me-1"></i> Tu Tienda Asignada
+                </div>
+                <div class="p-2 bg-light rounded-3 d-flex align-items-center gap-2 border">
+                    <i class="fas fa-map-marker-alt text-primary"></i>
+                    <strong class="text-dark small text-truncate">{{ auth()->user()->sucursal->nombre }}</strong>
+                </div>
+            </div>
+        @endif
+
         <!-- Navegación Menú -->
         <div class="p-3 overflow-y-auto flex-grow-1" style="max-height: calc(100vh - 190px);">
             <div class="nav-section-title">General</div>
@@ -269,6 +314,24 @@
 
     <!-- Page Content Wrapper -->
     <div id="page-content-wrapper">
+        <!-- Banner Contextual de Sucursal para Administrador -->
+        @if(auth()->user()->esAdmin() && $sucursalSeleccionada)
+            <div class="bg-primary bg-opacity-10 border-bottom px-4 py-2 d-flex flex-wrap align-items-center justify-content-between gap-2 shadow-xs">
+                <div class="d-flex align-items-center gap-2 small">
+                    <span class="badge bg-primary text-white rounded-pill px-2 py-1"><i class="fas fa-store me-1"></i> Sucursal Activa</span>
+                    <strong class="text-dark">{{ $sucursalSeleccionada->nombre }}</strong>
+                    <span class="text-muted d-none d-md-inline">· {{ $sucursalSeleccionada->direccion }}</span>
+                </div>
+                <form action="{{ route('sucursales.cambiar-contexto') }}" method="POST" class="d-inline">
+                    @csrf
+                    <input type="hidden" name="sucursal_contexto_id" value="todas">
+                    <button type="submit" class="btn btn-sm btn-link text-primary text-decoration-none fw-bold p-0 d-flex align-items-center gap-1">
+                        <i class="fas fa-globe"></i> Ver Consolidado Global
+                    </button>
+                </form>
+            </div>
+        @endif
+
         <!-- Topbar Mobile -->
         <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 py-3 d-lg-none sticky-top shadow-sm">
             <button class="btn btn-light rounded-3" id="menu-toggle">

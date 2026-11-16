@@ -32,7 +32,7 @@
                             <th>Categoría</th>
                             <th>P. Compra</th>
                             <th>P. Venta</th>
-                            <th>Stock</th>
+                            <th>{{ $sucursalActivaId ? 'Stock Local' : 'Stock Total' }}</th>
                             <th>Estado</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -63,9 +63,24 @@
                                 <td class="text-muted small">{{ $config->moneda ?? 'S/' }} {{ number_format($p->precio_compra, 2) }}</td>
                                 <td class="fw-bold text-dark">{{ $config->moneda ?? 'S/' }} {{ number_format($p->precio_venta, 2) }}</td>
                                 <td>
-                                    <span class="badge rounded-pill px-3 py-1 fw-bold {{ $p->stock > 10 ? 'bg-success bg-opacity-10 text-success' : ($p->stock > 0 ? 'bg-warning bg-opacity-10 text-dark' : 'bg-danger bg-opacity-10 text-danger') }}">
-                                        {{ $p->stock }} uds.
-                                    </span>
+                                    @if($sucursalActivaId)
+                                        @php $stockLocal = $p->stockEnSucursal($sucursalActivaId); @endphp
+                                        <span class="badge rounded-pill px-3 py-1 fw-bold {{ $stockLocal > 10 ? 'bg-success bg-opacity-10 text-success' : ($stockLocal > 0 ? 'bg-warning bg-opacity-10 text-dark' : 'bg-danger bg-opacity-10 text-danger') }}">
+                                            {{ $stockLocal }} uds.
+                                        </span>
+                                        <div class="small text-muted mt-1" style="font-size: 0.7rem;">Total global: {{ $p->stock }} uds.</div>
+                                    @else
+                                        <span class="badge rounded-pill px-3 py-1 fw-bold {{ $p->stock > 10 ? 'bg-success bg-opacity-10 text-success' : ($p->stock > 0 ? 'bg-warning bg-opacity-10 text-dark' : 'bg-danger bg-opacity-10 text-danger') }}">
+                                            {{ $p->stock }} uds.
+                                        </span>
+                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                            @foreach($sucursales as $s)
+                                                <span class="badge bg-light text-secondary border" style="font-size: 0.65rem;" title="{{ $s->nombre }}">
+                                                    {{ $s->codigo ?? substr($s->nombre, 0, 8) }}: <strong>{{ $p->stockEnSucursal($s->id) }}</strong>
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </td>
                                 <td>
                                     <span class="badge rounded-pill {{ $p->estado === 'activo' ? 'bg-success' : 'bg-secondary' }}">
@@ -75,7 +90,7 @@
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end gap-1">
                                         <!-- Ajustar Stock -->
-                                        <button class="btn btn-sm btn-light text-primary rounded-circle p-2" title="Ajustar Stock" onclick="abrirModalStock({{ $p->id }}, '{{ addslashes($p->nombre) }}', {{ $p->stock }})">
+                                        <button class="btn btn-sm btn-light text-primary rounded-circle p-2" title="Ajustar Stock" onclick="abrirModalStock({{ $p->id }}, '{{ addslashes($p->nombre) }}', {{ $sucursalActivaId ? $p->stockEnSucursal($sucursalActivaId) : $p->stock }}, {{ $sucursalActivaId ?? 'null' }})">
                                             <i class="fas fa-layer-group"></i>
                                         </button>
 
@@ -138,6 +153,16 @@
                             <label class="form-label small fw-bold text-secondary mb-1">Stock Inicial</label>
                             <input type="number" name="stock" id="prod_stock" class="form-control rounded-3" min="0" value="0">
                         </div>
+                        <div class="col-12 col-md-6" id="divSucursalInicial">
+                            <label class="form-label small fw-bold text-secondary mb-1">Sucursal Inicial</label>
+                            <select name="sucursal_id" id="prod_sucursal_id" class="form-select rounded-3">
+                                @foreach($sucursales as $suc)
+                                    <option value="{{ $suc->id }}" {{ $sucursalActivaId == $suc->id ? 'selected' : '' }}>
+                                        📍 {{ $suc->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-bold text-secondary mb-1">Precio Compra / Costo ({{ $config->moneda ?? 'S/' }}) <span class="text-danger">*</span></label>
@@ -172,7 +197,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold">Ajuste Rápido de Stock</h5>
+                <h5 class="modal-title fw-bold">Ajuste de Stock por Sucursal</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ route('inventario.productos.ajuste-stock') }}" method="POST">
@@ -181,27 +206,38 @@
 
                 <div class="modal-body p-4">
                     <div class="p-3 bg-light rounded-3 mb-3">
-                        <div class="fw-bold text-dark" id="stock_prod_nombre">Producto</div>
-                        <div class="small text-muted">Stock actual: <strong id="stock_prod_actual" class="text-primary">0</strong> unidades</div>
+                        <div class="fw-bold text-dark fs-6" id="stock_prod_nombre">Producto</div>
+                        <div class="small text-muted">Stock actual en este contexto: <strong id="stock_prod_actual" class="text-primary">0</strong> unidades</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary mb-1">Sucursal a Ajustar <span class="text-danger">*</span></label>
+                        <select name="sucursal_id" id="stock_sucursal_select" class="form-select rounded-3 fw-bold" required>
+                            @foreach($sucursales as $suc)
+                                <option value="{{ $suc->id }}" {{ $sucursalActivaId == $suc->id ? 'selected' : '' }}>
+                                    📍 {{ $suc->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label small fw-bold text-secondary mb-1">Tipo de Operación</label>
                         <select name="operacion" class="form-select rounded-3" required>
-                            <option value="sumar">➕ Entrada / Agregar Stock</option>
-                            <option value="restar">➖ Salida / Retirar Stock (Mermas / Ajuste)</option>
+                            <option value="sumar">➕ Entrada / Agregar Stock a la Sucursal</option>
+                            <option value="restar">➖ Salida / Retirar Stock de la Sucursal</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-secondary mb-1">Cantidad a Ajustar</label>
+                        <label class="form-label small fw-bold text-secondary mb-1">Cantidad de Unidades</label>
                         <input type="number" min="1" name="cantidad" class="form-control rounded-3 fs-5 fw-bold" placeholder="1" required>
                     </div>
                 </div>
 
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Confirmar Ajuste</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">Confirmar Ajuste</button>
                 </div>
             </form>
         </div>
@@ -224,6 +260,7 @@ function abrirModalProducto() {
     document.getElementById('prod_compra').value = '';
     document.getElementById('prod_venta').value = '';
     document.getElementById('divStockInicial').classList.remove('d-none');
+    document.getElementById('divSucursalInicial').classList.remove('d-none');
     modalProd.show();
 }
 
@@ -235,14 +272,18 @@ function editarProducto(prod) {
     document.getElementById('prod_cat').value = prod.categoria_id;
     document.getElementById('prod_compra').value = prod.precio_compra;
     document.getElementById('prod_venta').value = prod.precio_venta;
-    document.getElementById('divStockInicial').classList.add('d-none'); // El stock se edita mediante ajuste
+    document.getElementById('divStockInicial').classList.add('d-none');
+    document.getElementById('divSucursalInicial').classList.add('d-none');
     modalProd.show();
 }
 
-function abrirModalStock(id, nombre, stock) {
+function abrirModalStock(id, nombre, stock, sucursalId) {
     document.getElementById('stock_prod_id').value = id;
     document.getElementById('stock_prod_nombre').textContent = nombre;
     document.getElementById('stock_prod_actual').textContent = stock;
+    if (sucursalId) {
+        document.getElementById('stock_sucursal_select').value = sucursalId;
+    }
     modalStock.show();
 }
 </script>

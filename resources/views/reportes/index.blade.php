@@ -115,8 +115,23 @@
 
             <!-- Formulario de Filtros Específicos -->
             <form action="{{ route('reportes.index') }}" method="GET" class="row g-3 align-items-end">
-                <!-- Fecha Desde -->
+                <!-- Filtro por Sucursal -->
                 <div class="col-12 col-sm-6 col-lg-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">
+                        <i class="fas fa-store text-muted me-1"></i> Sucursal / Local
+                    </label>
+                    <select name="sucursal_id" class="form-select rounded-3">
+                        <option value="todas">🌐 Todas las Sucursales</option>
+                        @foreach($sucursales as $s)
+                            <option value="{{ $s->id }}" {{ (string)$sucursalId === (string)$s->id ? 'selected' : '' }}>
+                                📍 {{ $s->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Fecha Desde -->
+                <div class="col-12 col-sm-6 col-lg-2">
                     <label class="form-label small fw-bold text-secondary mb-1">
                         <i class="fas fa-calendar-alt text-muted me-1"></i> Desde
                     </label>
@@ -124,7 +139,7 @@
                 </div>
 
                 <!-- Fecha Hasta -->
-                <div class="col-12 col-sm-6 col-lg-3">
+                <div class="col-12 col-sm-6 col-lg-2">
                     <label class="form-label small fw-bold text-secondary mb-1">
                         <i class="fas fa-calendar-alt text-muted me-1"></i> Hasta
                     </label>
@@ -147,16 +162,16 @@
                 </div>
 
                 <!-- Filtro por Método de Pago -->
-                <div class="col-12 col-sm-6 col-lg-3">
+                <div class="col-12 col-sm-6 col-lg-2">
                     <label class="form-label small fw-bold text-secondary mb-1">
-                        <i class="fas fa-wallet text-muted me-1"></i> Método de Pago
+                        <i class="fas fa-wallet text-muted me-1"></i> Método Pago
                     </label>
                     <select name="metodo_pago" class="form-select rounded-3">
-                        <option value="">-- Todos los Métodos --</option>
+                        <option value="">-- Todos --</option>
                         <option value="efectivo" {{ $metodoPago === 'efectivo' ? 'selected' : '' }}>💵 Efectivo</option>
-                        <option value="tarjeta" {{ $metodoPago === 'tarjeta' ? 'selected' : '' }}>💳 Tarjeta (POS)</option>
-                        <option value="yape_plin" {{ $metodoPago === 'yape_plin' ? 'selected' : '' }}>📱 Yape / Plin (Billeteras)</option>
-                        <option value="transferencia" {{ $metodoPago === 'transferencia' ? 'selected' : '' }}>🏦 Transferencia Bancaria</option>
+                        <option value="tarjeta" {{ $metodoPago === 'tarjeta' ? 'selected' : '' }}>💳 Tarjeta</option>
+                        <option value="yape_plin" {{ $metodoPago === 'yape_plin' ? 'selected' : '' }}>📱 Yape/Plin</option>
+                        <option value="transferencia" {{ $metodoPago === 'transferencia' ? 'selected' : '' }}>🏦 Transf.</option>
                     </select>
                 </div>
 

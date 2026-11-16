@@ -24,10 +24,16 @@ class CajaController extends Controller
             return view('caja.cierre', compact('config', 'cajaAbierta', 'totales'));
         }
 
-        $historial = Caja::with(['usuario', 'sucursal'])
-            ->orderBy('id', 'desc')
-            ->limit(30)
-            ->get();
+        $sucursalContextoId = session('sucursal_activa_id');
+
+        $historialQuery = Caja::with(['usuario', 'sucursal'])
+            ->orderBy('id', 'desc');
+
+        if ($sucursalContextoId) {
+            $historialQuery->where('sucursal_id', $sucursalContextoId);
+        }
+
+        $historial = $historialQuery->limit(30)->get();
 
         $sucursales = Sucursal::where('estado', 'activo')->orderBy('nombre', 'asc')->get();
 

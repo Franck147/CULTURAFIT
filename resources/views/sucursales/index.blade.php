@@ -139,6 +139,15 @@
                                 </td>
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end gap-1">
+                                        <!-- Entrar a esta Sucursal (Cambiar Contexto) -->
+                                        <form action="{{ route('sucursales.cambiar-contexto') }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <input type="hidden" name="sucursal_contexto_id" value="{{ $suc->id }}">
+                                            <button type="submit" class="btn btn-sm {{ session('sucursal_activa_id') == $suc->id ? 'btn-primary text-white shadow-xs' : 'btn-light text-primary' }} rounded-circle p-2" title="{{ session('sucursal_activa_id') == $suc->id ? 'Sucursal actualmente activa' : 'Ingresar a esta sucursal' }}">
+                                                <i class="fas fa-sign-in-alt"></i>
+                                            </button>
+                                        </form>
+
                                         <!-- Editar Sucursal -->
                                         <a href="{{ route('sucursales.editar', $suc->id) }}" class="btn btn-sm btn-light text-secondary rounded-circle p-2" title="Editar Sucursal">
                                             <i class="fas fa-edit"></i>

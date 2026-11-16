@@ -41,15 +41,26 @@
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-body p-4">
             <form action="{{ route('pos.historial') }}" method="GET" class="row g-3 align-items-end">
-                <div class="col-12 col-md-3">
+                <div class="col-12 col-md-2">
                     <label class="form-label small fw-bold text-secondary mb-1">Desde</label>
                     <input type="date" name="desde" class="form-control rounded-3" value="{{ $desde }}">
                 </div>
-                <div class="col-12 col-md-3">
+                <div class="col-12 col-md-2">
                     <label class="form-label small fw-bold text-secondary mb-1">Hasta</label>
                     <input type="date" name="hasta" class="form-control rounded-3" value="{{ $hasta }}">
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-bold text-secondary mb-1">Sucursal</label>
+                    <select name="sucursal_id" class="form-select rounded-3">
+                        <option value="todas">🌐 Todas las Sucursales</option>
+                        @foreach($sucursales as $s)
+                            <option value="{{ $s->id }}" {{ $sucursalId == $s->id ? 'selected' : '' }}>
+                                📍 {{ $s->nombre }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
                     <label class="form-label small fw-bold text-secondary mb-1">Buscar Cliente / Cajero</label>
                     <input type="text" name="busqueda" class="form-control rounded-3" placeholder="Nombre de cliente o cajero..." value="{{ $busqueda }}">
                 </div>

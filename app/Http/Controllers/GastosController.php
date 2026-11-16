@@ -14,7 +14,15 @@ class GastosController extends Controller
     public function index()
     {
         $config = Configuracion::getInfo();
-        $gastos = Gasto::with(['usuario', 'caja'])->orderBy('id', 'desc')->get();
+        $sucursalContextoId = session('sucursal_activa_id');
+
+        $query = Gasto::with(['usuario', 'caja.sucursal'])->orderBy('id', 'desc');
+
+        if ($sucursalContextoId) {
+            $query->whereHas('caja', fn($q) => $q->where('sucursal_id', $sucursalContextoId));
+        }
+
+        $gastos = $query->get();
         return view('gastos.index', compact('config', 'gastos'));
     }
 

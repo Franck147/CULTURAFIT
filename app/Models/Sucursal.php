@@ -42,6 +42,11 @@ class Sucursal extends Model
         return $this->hasMany(Venta::class, 'sucursal_id');
     }
 
+    public function inventarios()
+    {
+        return $this->hasMany(InventarioSucursal::class, 'sucursal_id');
+    }
+
     public static function principal()
     {
         return static::where('es_principal', true)->where('estado', 'activo')->first() 

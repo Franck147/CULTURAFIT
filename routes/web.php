@@ -134,6 +134,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/editar/{id}', [SucursalesController::class, 'editar'])->name('editar');
             Route::post('/actualizar/{id}', [SucursalesController::class, 'actualizar'])->name('actualizar');
             Route::post('/cambiar-estado/{id}', [SucursalesController::class, 'cambiarEstado'])->name('cambiar-estado');
+            Route::post('/cambiar-contexto', [SucursalesController::class, 'cambiarContexto'])->name('cambiar-contexto');
         });
 
         // Mantenimiento & Copias de Seguridad de BD

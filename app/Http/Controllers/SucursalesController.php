@@ -126,4 +126,19 @@ class SucursalesController extends Controller
 
         return redirect()->route('sucursales.index')->with('success', 'Estado de la sucursal cambiado.');
     }
+
+    public function cambiarContexto(Request $request)
+    {
+        $sucursalId = $request->input('sucursal_contexto_id');
+
+        if (empty($sucursalId) || $sucursalId === 'todas') {
+            session()->forget('sucursal_activa_id');
+            return back()->with('success', 'Mostrando datos consolidados de: Todas las Sucursales (Visión Global).');
+        }
+
+        $sucursal = Sucursal::where('estado', 'activo')->findOrFail($sucursalId);
+        session(['sucursal_activa_id' => $sucursal->id]);
+
+        return back()->with('success', "Has ingresado al contexto de la tienda: {$sucursal->nombre}.");
+    }
 }

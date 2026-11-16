@@ -7,6 +7,7 @@ use App\Models\Categoria;
 use App\Models\Configuracion;
 use App\Models\DetalleVenta;
 use App\Models\Gasto;
+use App\Models\InventarioSucursal;
 use App\Models\Producto;
 use App\Models\Socio;
 use App\Models\Sucursal;
@@ -33,7 +34,18 @@ class PosController extends Controller
         $cajaAbierta->load('sucursal');
 
         $config = Configuracion::getInfo();
-        $productos = Producto::where('estado', 'activo')->orderBy('nombre', 'asc')->get();
+        $sucursalId = $cajaAbierta->sucursal_id ?: optional(Sucursal::principal())->id;
+
+        $productos = Producto::where('estado', 'activo')
+            ->with(['categoria', 'inventarios'])
+            ->orderBy('nombre', 'asc')
+            ->get();
+
+        // Asignar a cada producto el stock disponible en la sucursal activa de esta caja
+        foreach ($productos as $p) {
+            $p->stock = $p->stockEnSucursal($sucursalId);
+        }
+
         $categorias = Categoria::where('estado', 'activo')->orderBy('nombre', 'asc')->get();
         $socios = Socio::where('estado', 'activo')->orderBy('nombre', 'asc')->get();
 
@@ -67,7 +79,11 @@ class PosController extends Controller
                 $subtotalBruto = 0;
                 $itemsAProcesar = [];
 
-                // 1. Verificar stock y calcular precios en el servidor (no confiar en el precio del frontend)
+                $sucursalId = $cajaAbierta->sucursal_id ?: ($user->sucursal_id ?: optional(Sucursal::principal())->id);
+                $sucursal = Sucursal::find($sucursalId);
+                $sucursalNombre = $sucursal ? $sucursal->nombre : 'la sucursal actual';
+
+                // 1. Verificar stock en la sucursal y calcular precios en el servidor
                 foreach ($carrito as $item) {
                     $producto = Producto::lockForUpdate()->find($item['id']);
 
@@ -77,8 +93,15 @@ class PosController extends Controller
 
                     $cantidad = max(1, (int)$item['cantidad']);
 
-                    if ($producto->stock < $cantidad) {
-                        throw new \Exception("Stock insuficiente para: {$producto->nombre} (Disponible: {$producto->stock})");
+                    $inv = InventarioSucursal::where('producto_id', $producto->id)
+                        ->where('sucursal_id', $sucursalId)
+                        ->lockForUpdate()
+                        ->first();
+
+                    $stockDisponible = $inv ? (int)$inv->stock : 0;
+
+                    if ($stockDisponible < $cantidad) {
+                        throw new \Exception("Stock insuficiente en {$sucursalNombre} para: {$producto->nombre} (Disponible: {$stockDisponible})");
                     }
 
                     $precioUnit = (float)$producto->precio_venta;
@@ -87,6 +110,7 @@ class PosController extends Controller
 
                     $itemsAProcesar[] = [
                         'producto' => $producto,
+                        'inventario' => $inv,
                         'cantidad' => $cantidad,
                         'precio_unitario' => $precioUnit,
                         'subtotal' => $lineaSubtotal,
@@ -95,8 +119,6 @@ class PosController extends Controller
 
                 $descuento = min($subtotalBruto, max(0, (float)$request->descuento));
                 $totalFinal = max(0, $subtotalBruto - $descuento);
-
-                $sucursalId = $cajaAbierta->sucursal_id ?: ($user->sucursal_id ?: optional(Sucursal::principal())->id);
 
                 // 2. Crear Venta
                 $venta = Venta::create([
@@ -109,7 +131,7 @@ class PosController extends Controller
                     'fecha' => Carbon::now(),
                 ]);
 
-                // 3. Crear Detalle y Descontar Stock
+                // 3. Crear Detalle y Descontar Stock de la sucursal
                 foreach ($itemsAProcesar as $it) {
                     DetalleVenta::create([
                         'venta_id' => $venta->id,
@@ -119,7 +141,10 @@ class PosController extends Controller
                         'subtotal' => $it['subtotal'],
                     ]);
 
-                    $it['producto']->decrement('stock', $it['cantidad']);
+                    if ($it['inventario']) {
+                        $it['inventario']->decrement('stock', $it['cantidad']);
+                    }
+                    $it['producto']->sincronizarStockTotal();
                 }
 
                 // 4. Actualizar total_ventas en la caja activa
@@ -172,10 +197,15 @@ class PosController extends Controller
         $desde = $request->input('desde', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $hasta = $request->input('hasta', Carbon::now()->format('Y-m-d'));
         $busqueda = trim($request->input('busqueda', ''));
+        $sucursalId = $request->input('sucursal_id', session('sucursal_activa_id'));
 
         $query = Venta::with(['caja.usuario', 'caja.sucursal', 'socio', 'sucursal'])
             ->whereDate('fecha', '>=', $desde)
             ->whereDate('fecha', '<=', $hasta);
+
+        if (!empty($sucursalId) && $sucursalId !== 'todas') {
+            $query->where('sucursal_id', $sucursalId);
+        }
 
         if (!empty($busqueda)) {
             $query->where(function ($q) use ($busqueda) {
@@ -189,15 +219,16 @@ class PosController extends Controller
 
         $ventas = $query->orderBy('fecha', 'desc')->paginate(25);
 
-        $totalRecaudado = (float)Venta::whereDate('fecha', '>=', $desde)
-            ->whereDate('fecha', '<=', $hasta)
-            ->sum('total');
+        $totalesQuery = Venta::whereDate('fecha', '>=', $desde)->whereDate('fecha', '<=', $hasta);
+        if (!empty($sucursalId) && $sucursalId !== 'todas') {
+            $totalesQuery->where('sucursal_id', $sucursalId);
+        }
 
-        $cantVentas = Venta::whereDate('fecha', '>=', $desde)
-            ->whereDate('fecha', '<=', $hasta)
-            ->count();
-
+        $totalRecaudado = (float)$totalesQuery->sum('total');
+        $cantVentas = $totalesQuery->count();
         $ticketPromedio = $cantVentas > 0 ? $totalRecaudado / $cantVentas : 0;
+
+        $sucursales = Sucursal::where('estado', 'activo')->orderBy('nombre', 'asc')->get();
 
         return view('pos.historial', compact(
             'config',
@@ -205,6 +236,8 @@ class PosController extends Controller
             'desde',
             'hasta',
             'busqueda',
+            'sucursalId',
+            'sucursales',
             'totalRecaudado',
             'cantVentas',
             'ticketPromedio'
