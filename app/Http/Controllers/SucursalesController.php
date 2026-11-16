@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
+use App\Models\InventarioSucursal;
+use App\Models\Producto;
 use App\Models\Sucursal;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -55,7 +57,7 @@ class SucursalesController extends Controller
             Sucursal::where('es_principal', true)->update(['es_principal' => false]);
         }
 
-        Sucursal::create([
+        $sucursal = Sucursal::create([
             'nombre' => $request->nombre,
             'codigo' => $request->codigo ?: null,
             'direccion' => $request->direccion,
@@ -65,7 +67,16 @@ class SucursalesController extends Controller
             'estado' => $request->estado,
         ]);
 
-        return redirect()->route('sucursales.index')->with('success', 'Sucursal registrada con éxito.');
+        // Registrar todo el catálogo de productos existente en la nueva sucursal con stock 0
+        $productos = Producto::all();
+        foreach ($productos as $p) {
+            InventarioSucursal::firstOrCreate(
+                ['producto_id' => $p->id, 'sucursal_id' => $sucursal->id],
+                ['stock' => 0, 'stock_minimo' => 5]
+            );
+        }
+
+        return redirect()->route('sucursales.index')->with('success', 'Sucursal registrada con éxito y catálogo de productos sincronizado.');
     }
 
     public function editar($id)
