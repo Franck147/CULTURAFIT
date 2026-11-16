@@ -6,6 +6,7 @@ use App\Models\Caja;
 use App\Models\Categoria;
 use App\Models\Configuracion;
 use App\Models\DetalleVenta;
+use App\Models\Gasto;
 use App\Models\Producto;
 use App\Models\Socio;
 use App\Models\Venta;
@@ -59,7 +60,7 @@ class PosController extends Controller
         }
 
         try {
-            $ventaId = DB::transaction(function () use ($carrito, $request, $cajaAbierta) {
+            $ventaId = DB::transaction(function () use ($carrito, $request, $cajaAbierta, $user) {
                 $subtotalBruto = 0;
                 $itemsAProcesar = [];
 
@@ -117,6 +118,28 @@ class PosController extends Controller
 
                 // 4. Actualizar total_ventas en la caja activa
                 $cajaAbierta->increment('total_ventas', $totalFinal);
+
+                // 5. Si hubo descuento comercial, registrarlo en Gastos apuntando al ticket
+                if ($descuento > 0) {
+                    $nombreCliente = 'Venta Directa';
+                    if ($request->socio_id) {
+                        $socioObj = Socio::find($request->socio_id);
+                        if ($socioObj) {
+                            $nombreCliente = $socioObj->nombre . ' (DNI: ' . $socioObj->dni . ')';
+                        }
+                    }
+                    $ticketPad = str_pad($venta->id, 5, '0', STR_PAD_LEFT);
+                    Gasto::create([
+                        'caja_id' => $cajaAbierta->id,
+                        'usuario_id' => Auth::id() ?? ($user ? $user->id : null),
+                        'venta_id' => $venta->id,
+                        'tipo' => 'descuento_venta',
+                        'descripcion' => "Descuento comercial en Ticket #{$ticketPad} (Venta #{$ticketPad}) - Cliente: {$nombreCliente}",
+                        'monto' => $descuento,
+                        'fecha' => Carbon::now()->format('Y-m-d'),
+                        'estado' => 'creado',
+                    ]);
+                }
 
                 return $venta->id;
             });

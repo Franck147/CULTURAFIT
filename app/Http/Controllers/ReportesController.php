@@ -90,8 +90,11 @@ class ReportesController extends Controller
 
         $gastos = $gastosQuery->orderBy('fecha', 'desc')->get();
         $totalGastos = (float)$gastos->sum('monto');
+        $gastosOperativos = (float)$gastos->whereNull('venta_id')->sum('monto');
+        $gastosDescuentos = (float)$gastos->whereNotNull('venta_id')->sum('monto');
 
-        $utilidadNeta = $totalVentasNetas - $totalGastos;
+        // Utilidad Neta real = Ventas Netas - Gastos Operativos (equivalente a Ventas Brutas - Total Gastos)
+        $utilidadNeta = $totalVentasNetas - $gastosOperativos;
         $margenRentabilidad = $totalVentasNetas > 0 ? ($utilidadNeta / $totalVentasNetas) * 100 : 0;
         $sociosActivos = Socio::where('estado', 'activo')->count();
 

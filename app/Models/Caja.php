@@ -55,27 +55,37 @@ class Caja extends Model
     public function calcularTotalesServidor(): array
     {
         // 1. Sumar ventas por método de pago de esta caja
-        $ventasTotales = $this->ventas()->sum('total');
-        $ventasEfectivo = $this->ventas()->whereRaw("LOWER(metodo_pago) = 'efectivo'")->sum('total');
-        $ventasTarjeta = $this->ventas()->whereRaw("LOWER(metodo_pago) = 'tarjeta'")->sum('total');
-        $ventasTransferencia = $this->ventas()->whereRaw("LOWER(metodo_pago) = 'transferencia'")->sum('total');
-        $ventasYapePlin = $this->ventas()->whereRaw("LOWER(metodo_pago) IN ('yape_plin', 'yape', 'plin')")->sum('total');
+        $ventasTotales = (float)$this->ventas()->sum('total');
+        $totalDescuentos = (float)$this->ventas()->sum('descuento');
+        $ventasBrutas = $ventasTotales + $totalDescuentos;
 
-        // 2. Sumar gastos no anulados vinculados a esta caja
-        $totalGastos = $this->gastos()->where('estado', '!=', 'anulado')->sum('monto');
+        $ventasEfectivo = (float)$this->ventas()->whereRaw("LOWER(metodo_pago) = 'efectivo'")->sum('total');
+        $ventasTarjeta = (float)$this->ventas()->whereRaw("LOWER(metodo_pago) = 'tarjeta'")->sum('total');
+        $ventasTransferencia = (float)$this->ventas()->whereRaw("LOWER(metodo_pago) = 'transferencia'")->sum('total');
+        $ventasYapePlin = (float)$this->ventas()->whereRaw("LOWER(metodo_pago) IN ('yape_plin', 'yape', 'plin')")->sum('total');
 
-        // 3. Saldo esperado en cajón físico: Monto Inicial + Ventas Efectivo - Gastos
-        $saldoEsperado = (float)$this->monto_inicial + (float)$ventasEfectivo - (float)$totalGastos;
+        // 2. Gastos operativos (salidas físicas de efectivo del cajón) vs Descuentos en ventas
+        $gastosOperativos = (float)$this->gastos()->where('estado', '!=', 'anulado')->whereNull('venta_id')->sum('monto');
+        $gastosDescuentos = (float)$this->gastos()->where('estado', '!=', 'anulado')->whereNotNull('venta_id')->sum('monto');
+        $totalGastos = $gastosOperativos + $gastosDescuentos;
+
+        // 3. Saldo esperado en cajón físico: Monto Inicial + Cobrado en Efectivo - Salidas Físicas de Efectivo
+        // Al descontar solo salidas físicas, la caja NUNCA se descuadra por descuentos comerciales.
+        $saldoEsperado = (float)$this->monto_inicial + (float)$ventasEfectivo - (float)$gastosOperativos;
 
         return [
             'monto_inicial' => (float)$this->monto_inicial,
             'total_ventas' => (float)$ventasTotales,
+            'ventas_brutas' => (float)$ventasBrutas,
+            'total_descuentos' => (float)$totalDescuentos,
             'ventas_efectivo' => (float)$ventasEfectivo,
             'ventas_tarjeta' => (float)$ventasTarjeta,
             'ventas_transferencia' => (float)$ventasTransferencia,
             'ventas_yape_plin' => (float)$ventasYapePlin,
+            'gastos_operativos' => (float)$gastosOperativos,
+            'gastos_descuentos' => (float)$gastosDescuentos,
             'total_gastos' => (float)$totalGastos,
-            'gastos' => (float)$totalGastos,
+            'gastos' => (float)$gastosOperativos,
             'saldo_esperado' => (float)$saldoEsperado,
             'esperado_efectivo' => (float)$saldoEsperado,
         ];

@@ -64,12 +64,26 @@
                                             <i class="fas fa-arrow-down"></i>
                                         </div>
                                         <div>
-                                            <div class="fw-semibold text-dark">(-) Gastos y Salidas en Efectivo</div>
-                                            <small class="text-muted">Pagos operativos durante el turno</small>
+                                            <div class="fw-semibold text-dark">(-) Salidas de Efectivo de Caja</div>
+                                            <small class="text-muted">Gastos operativos retirados del cajón físico</small>
                                         </div>
                                     </div>
-                                    <span class="fw-bold text-danger fs-6">- {{ $config->moneda ?? 'S/' }} {{ number_format($totales['gastos'] ?? $totales['total_gastos'] ?? 0, 2) }}</span>
+                                    <span class="fw-bold text-danger fs-6">- {{ $config->moneda ?? 'S/' }} {{ number_format($totales['gastos_operativos'] ?? 0, 2) }}</span>
                                 </div>
+
+                                @if(!empty($totales['gastos_descuentos']) && $totales['gastos_descuentos'] > 0)
+                                    <!-- Descuentos Aplicados en Ventas -->
+                                    <div class="list-group-item d-flex justify-content-between align-items-center py-2 bg-light bg-opacity-75">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="fas fa-tags text-warning small"></i>
+                                            <div>
+                                                <span class="small fw-bold text-dark">Descuentos en Ventas (Registrados en Gastos):</span>
+                                                <small class="text-muted d-block" style="font-size: 0.72rem;">Apuntan a tickets; la entrada a caja ya es el monto neto</small>
+                                            </div>
+                                        </div>
+                                        <span class="fw-bold text-secondary small">{{ $config->moneda ?? 'S/' }} {{ number_format($totales['gastos_descuentos'], 2) }}</span>
+                                    </div>
+                                @endif
 
                                 <!-- Ventas Digitales: Tarjeta -->
                                 <div class="list-group-item d-flex justify-content-between align-items-center py-2 bg-light bg-opacity-50">

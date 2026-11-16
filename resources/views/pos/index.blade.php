@@ -145,10 +145,15 @@
                         <span id="cartSubtotalText">{{ $config->moneda ?? 'S/' }} 0.00</span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="small text-muted">Descuento</span>
-                        <div class="input-group input-group-sm" style="width: 120px;">
-                            <span class="input-group-text bg-white">{{ $config->moneda ?? 'S/' }}</span>
-                            <input type="number" step="0.50" min="0" id="cartDiscount" class="form-control text-end" value="0.00" oninput="updateTotals()">
+                        <div>
+                            <span class="small text-muted fw-semibold">Descuento</span>
+                            <small class="d-block text-muted" style="font-size: 0.68rem;" title="El descuento se registrará automáticamente en Gastos apuntando a este ticket">
+                                <i class="fas fa-tags text-primary"></i> Se refleja en Gastos
+                            </small>
+                        </div>
+                        <div class="input-group input-group-sm" style="width: 130px;">
+                            <span class="input-group-text bg-white text-muted fw-semibold">{{ $config->moneda ?? 'S/' }}</span>
+                            <input type="number" step="0.50" min="0" id="cartDiscount" class="form-control text-end fw-bold text-danger" value="0.00" placeholder="0.00" oninput="updateTotals()">
                         </div>
                     </div>
                     <hr class="my-2">
@@ -407,18 +412,23 @@
                 <!-- Totales y Descuentos -->
                 <div class="p-3 rounded-4 bg-light border border-light-subtle">
                     <div class="d-flex justify-content-between text-muted small mb-1">
-                        <span>Subtotal Bruto:</span>
+                        <span>Subtotal (Precios Fijos de Catálogo):</span>
                         <span class="fw-semibold text-dark" id="resumenSubtotal">S/ 0.00</span>
                     </div>
                     <div class="d-flex justify-content-between text-muted small mb-2" id="resumenDescuentoRow">
-                        <span>Descuento aplicado:</span>
+                        <span>Descuento Comercial:</span>
                         <span class="fw-semibold text-danger" id="resumenDescuento">- S/ 0.00</span>
+                    </div>
+                    <!-- Aviso de Gasto por Descuento -->
+                    <div id="resumenGastoAviso" class="alert alert-warning py-2 px-3 small rounded-3 mb-2 d-none" style="font-size: 0.78rem;">
+                        <i class="fas fa-tags text-warning me-1"></i>
+                        <strong>Control de Gastos:</strong> Este descuento de <strong id="resumenGastoAvisoMonto">S/ 0.00</strong> se registrará automáticamente en <strong>Gastos y Salidas</strong> apuntando al ticket, manteniendo la caja 100% cuadrada.
                     </div>
                     <hr class="my-2 border-secondary border-opacity-25">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <span class="fw-bold fs-5 text-dark">Total a Cobrar</span>
-                            <small class="text-muted d-block" style="font-size: 0.75rem;">Monto final registrado en caja</small>
+                            <small class="text-muted d-block" style="font-size: 0.75rem;">Monto neto que ingresa a caja</small>
                         </div>
                         <span class="fw-extrabold fs-3 text-primary" id="resumenTotalPagar">S/ 0.00</span>
                     </div>
@@ -762,11 +772,20 @@ function processCheckout() {
     // 4. Totales
     document.getElementById('resumenSubtotal').textContent = `${moneda} ${subtotal.toFixed(2)}`;
     const descRow = document.getElementById('resumenDescuentoRow');
+    const gastoAviso = document.getElementById('resumenGastoAviso');
+    const gastoAvisoMonto = document.getElementById('resumenGastoAvisoMonto');
     if (discount > 0) {
         descRow.classList.remove('d-none');
         document.getElementById('resumenDescuento').textContent = `- ${moneda} ${discount.toFixed(2)}`;
+        if (gastoAviso && gastoAvisoMonto) {
+            gastoAvisoMonto.textContent = `${moneda} ${discount.toFixed(2)}`;
+            gastoAviso.classList.remove('d-none');
+        }
     } else {
         descRow.classList.add('d-none');
+        if (gastoAviso) {
+            gastoAviso.classList.add('d-none');
+        }
     }
     document.getElementById('resumenTotalPagar').textContent = `${moneda} ${total.toFixed(2)}`;
 

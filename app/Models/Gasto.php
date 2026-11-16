@@ -11,6 +11,8 @@ class Gasto extends Model
     protected $fillable = [
         'caja_id',
         'usuario_id',
+        'venta_id',
+        'tipo',
         'descripcion',
         'monto',
         'fecha',
@@ -31,5 +33,10 @@ class Gasto extends Model
     public function usuario()
     {
         return $this->belongsTo(User::class, 'usuario_id');
+    }
+
+    public function venta()
+    {
+        return $this->belongsTo(Venta::class, 'venta_id');
     }
 }

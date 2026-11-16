@@ -39,8 +39,13 @@
                                 <td>{{ $g->fecha ? \Carbon\Carbon::parse($g->fecha)->format('d/m/Y') : '-' }}</td>
                                 <td>
                                     <div class="fw-semibold text-dark">{{ $g->descripcion }}</div>
+                                    @if($g->venta_id)
+                                        <a href="{{ route('ticket.ver', $g->venta_id) }}" target="_blank" class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 text-decoration-none mt-1" title="Ver Ticket Asociado">
+                                            <i class="fas fa-receipt me-1"></i> Ver Ticket #{{ str_pad($g->venta_id, 5, '0', STR_PAD_LEFT) }}
+                                        </a>
+                                    @endif
                                     @if($g->estado === 'anulado' && $g->motivo_anulacion)
-                                        <small class="text-danger">Motivo anulación: {{ $g->motivo_anulacion }}</small>
+                                        <small class="text-danger d-block">Motivo anulación: {{ $g->motivo_anulacion }}</small>
                                     @endif
                                 </td>
                                 <td>{{ $g->usuario->nombre ?? 'N/A' }}</td>
@@ -57,12 +62,20 @@
                                 <td>
                                     @if($g->estado === 'anulado')
                                         <span class="badge bg-secondary rounded-pill px-3 py-1">Anulado</span>
+                                    @elseif($g->venta_id || $g->tipo === 'descuento_venta')
+                                        <span class="badge bg-warning bg-opacity-10 text-warning text-dark border border-warning border-opacity-25 rounded-pill px-3 py-1 fw-bold">
+                                            <i class="fas fa-tags me-1"></i> Descuento Venta
+                                        </span>
                                     @else
-                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-bold">Efectivo</span>
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-1 fw-bold">Salida Efectivo</span>
                                     @endif
                                 </td>
                                 <td class="text-end">
-                                    @if($g->estado !== 'anulado')
+                                    @if($g->venta_id)
+                                        <a href="{{ route('ticket.ver', $g->venta_id) }}" target="_blank" class="btn btn-sm btn-light border text-primary rounded-pill px-3 fw-semibold">
+                                            <i class="fas fa-receipt me-1"></i> Ticket
+                                        </a>
+                                    @elseif($g->estado !== 'anulado')
                                         <button class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="abrirModalAnular({{ $g->id }}, '{{ addslashes($g->descripcion) }}')">
                                             <i class="fas fa-ban me-1"></i> Anular
                                         </button>

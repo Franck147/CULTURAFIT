@@ -38,6 +38,11 @@ class Venta extends Model
         return $this->hasMany(DetalleVenta::class, 'venta_id');
     }
 
+    public function gastoDescuento()
+    {
+        return $this->hasOne(Gasto::class, 'venta_id');
+    }
+
     /**
      * Nombre legible y formateado del método de pago
      */
