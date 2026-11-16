@@ -74,6 +74,7 @@
                         <tr class="text-muted small text-uppercase">
                             <th># Ticket</th>
                             <th>Fecha y Hora</th>
+                            <th>Sucursal</th>
                             <th>Cliente</th>
                             <th>Cajero</th>
                             <th>Método</th>
@@ -88,6 +89,11 @@
                                 <td>
                                     <div class="fw-semibold text-dark">{{ $v->fecha->format('d/m/Y') }}</div>
                                     <small class="text-muted">{{ $v->fecha->format('H:i:s') }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="fas fa-store text-primary me-1"></i> {{ $v->sucursal->nombre ?? ($v->caja->sucursal->nombre ?? 'Sede Principal') }}
+                                    </span>
                                 </td>
                                 <td>
                                     @if($v->socio)
@@ -187,6 +193,10 @@ function verDetalle(id) {
                     <div class="d-flex justify-content-between mb-1">
                         <span class="text-muted">Fecha y Hora:</span>
                         <strong class="text-dark">${new Date(data.fecha).toLocaleString()}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Sucursal:</span>
+                        <strong class="text-dark">${data.sucursal ? data.sucursal.nombre : 'Sede Principal'}</strong>
                     </div>
                     <div class="d-flex justify-content-between mb-1">
                         <span class="text-muted">Cliente:</span>

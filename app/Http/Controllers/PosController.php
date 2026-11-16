@@ -9,6 +9,7 @@ use App\Models\DetalleVenta;
 use App\Models\Gasto;
 use App\Models\Producto;
 use App\Models\Socio;
+use App\Models\Sucursal;
 use App\Models\Venta;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -28,6 +29,8 @@ class PosController extends Controller
         if (!$cajaAbierta) {
             return redirect()->route('caja.index')->with('warning', 'Debes abrir caja antes de realizar ventas.');
         }
+
+        $cajaAbierta->load('sucursal');
 
         $config = Configuracion::getInfo();
         $productos = Producto::where('estado', 'activo')->orderBy('nombre', 'asc')->get();
@@ -93,9 +96,12 @@ class PosController extends Controller
                 $descuento = min($subtotalBruto, max(0, (float)$request->descuento));
                 $totalFinal = max(0, $subtotalBruto - $descuento);
 
+                $sucursalId = $cajaAbierta->sucursal_id ?: ($user->sucursal_id ?: optional(Sucursal::principal())->id);
+
                 // 2. Crear Venta
                 $venta = Venta::create([
                     'caja_id' => $cajaAbierta->id,
+                    'sucursal_id' => $sucursalId,
                     'socio_id' => $request->socio_id ?: null,
                     'total' => $totalFinal,
                     'descuento' => $descuento,
@@ -167,7 +173,7 @@ class PosController extends Controller
         $hasta = $request->input('hasta', Carbon::now()->format('Y-m-d'));
         $busqueda = trim($request->input('busqueda', ''));
 
-        $query = Venta::with(['caja.usuario', 'socio'])
+        $query = Venta::with(['caja.usuario', 'caja.sucursal', 'socio', 'sucursal'])
             ->whereDate('fecha', '>=', $desde)
             ->whereDate('fecha', '<=', $hasta);
 
@@ -207,7 +213,7 @@ class PosController extends Controller
 
     public function detalleVenta($id)
     {
-        $venta = Venta::with(['detalles.producto', 'socio', 'caja.usuario'])->findOrFail($id);
+        $venta = Venta::with(['detalles.producto', 'socio', 'caja.usuario', 'sucursal'])->findOrFail($id);
         return response()->json($venta);
     }
 

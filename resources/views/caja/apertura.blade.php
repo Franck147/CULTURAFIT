@@ -27,6 +27,35 @@
                     <form action="{{ route('caja.abrir') }}" method="POST">
                         @csrf
 
+                        <!-- Selección o Indicador de Sucursal -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark mb-1">Sucursal / Local de Venta</label>
+                            @if(auth()->user()->sucursal)
+                                <div class="p-3 bg-light rounded-4 border d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary fw-bold">Asignada</span>
+                                            <strong class="text-dark">{{ auth()->user()->sucursal->nombre }}</strong>
+                                        </div>
+                                        <div class="text-muted small"><i class="fas fa-map-marker-alt text-danger me-1"></i>{{ auth()->user()->sucursal->direccion ?? 'Sin dirección' }}</div>
+                                    </div>
+                                    <div class="p-2 bg-white rounded-3 shadow-xs text-primary">
+                                        <i class="fas fa-store fs-4"></i>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="sucursal_id" value="{{ auth()->user()->sucursal_id }}">
+                            @else
+                                <select name="sucursal_id" class="form-select form-select-lg rounded-3 py-2 fw-semibold border" required>
+                                    @foreach($sucursales as $suc)
+                                        <option value="{{ $suc->id }}" {{ $suc->es_principal ? 'selected' : '' }}>
+                                            📍 {{ $suc->nombre }} ({{ $suc->codigo }}) {{ $suc->es_principal ? '— ⭐ Principal' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted">Seleccione la sucursal física donde iniciará este turno de caja.</small>
+                            @endif
+                        </div>
+
                         <div class="mb-4">
                             <label class="form-label fw-bold text-dark mb-1">Fondo Inicial en Caja (Efectivo)</label>
                             <div class="input-group input-group-lg">
@@ -73,6 +102,7 @@
                             <thead class="table-light">
                                 <tr class="text-muted small text-uppercase">
                                     <th># Turno</th>
+                                    <th>Sucursal</th>
                                     <th>Cajero</th>
                                     <th>Apertura / Cierre</th>
                                     <th>Inicial</th>
@@ -85,6 +115,11 @@
                                 @foreach($historial as $c)
                                     <tr>
                                         <td class="fw-bold">#{{ $c->id }}</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">
+                                                <i class="fas fa-store text-primary me-1"></i> {{ $c->sucursal->nombre ?? 'Sede Principal' }}
+                                            </span>
+                                        </td>
                                         <td>{{ $c->usuario->nombre ?? 'N/A' }}</td>
                                         <td>
                                             <div class="small fw-semibold">{{ $c->fecha_apertura ? $c->fecha_apertura->format('d/m/Y H:i') : '-' }}</div>

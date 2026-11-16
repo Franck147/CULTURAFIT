@@ -25,6 +25,7 @@
                             <th>Usuario</th>
                             <th>Correo Electrónico</th>
                             <th>Rol / Permisos</th>
+                            <th>Sucursal Asignada</th>
                             <th>Estado</th>
                             <th class="text-end">Acciones</th>
                         </tr>
@@ -53,6 +54,15 @@
                                         <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill fw-bold text-uppercase">
                                             <i class="fas fa-cash-register me-1"></i> Cajero / Asignado
                                         </span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($u->sucursal)
+                                        <span class="badge bg-light text-dark border px-2 py-1">
+                                            <i class="fas fa-store text-primary me-1"></i> {{ $u->sucursal->nombre }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted small fst-italic">Global / Todas</span>
                                     @endif
                                 </td>
                                 <td>

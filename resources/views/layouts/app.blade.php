@@ -244,6 +244,9 @@
                 <a href="{{ route('usuarios.index') }}" class="nav-link-custom {{ request()->routeIs('usuarios.*') ? 'active' : '' }}">
                     <i class="fas fa-user-shield fa-fw"></i> Usuarios del Sistema
                 </a>
+                <a href="{{ route('sucursales.index') }}" class="nav-link-custom {{ request()->routeIs('sucursales.*') ? 'active' : '' }}">
+                    <i class="fas fa-store fa-fw"></i> Sucursales
+                </a>
                 <a href="{{ route('configuracion.index') }}" class="nav-link-custom {{ request()->routeIs('configuracion.*') ? 'active' : '' }}">
                     <i class="fas fa-cog fa-fw"></i> Configuración
                 </a>

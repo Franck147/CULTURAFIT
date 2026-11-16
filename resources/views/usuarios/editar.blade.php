@@ -48,16 +48,31 @@
                             <small class="text-muted">Solo complete este campo si desea cambiar la clave actual.</small>
                         </div>
 
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label class="form-label small fw-bold text-secondary mb-1">Rol / Permisos <span class="text-danger">*</span></label>
                             <select name="rol" class="form-select rounded-3" required {{ $usuario->id === auth()->id() ? 'disabled' : '' }}>
                                 <option value="admin" {{ old('rol', $usuario->rol) === 'admin' ? 'selected' : '' }}>👑 Administrador (Acceso total)</option>
-                                <option value="cajero" {{ old('rol', $usuario->rol) === 'cajero' ? 'selected' : '' }}>💳 Cajero / Personal Asignado (Caja, POS, Socios, Gastos, Progreso)</option>
+                                <option value="cajero" {{ old('rol', $usuario->rol) === 'cajero' ? 'selected' : '' }}>💳 Cajero / Personal de Tienda (Caja, POS, Clientes, Gastos)</option>
                             </select>
                             @if($usuario->id === auth()->id())
                                 <input type="hidden" name="rol" value="{{ $usuario->rol }}">
                                 <small class="text-muted">No puedes cambiar tu propio rol de usuario.</small>
                             @endif
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-secondary mb-1">
+                                Sucursal Asignada <span class="text-muted fw-normal">(Tienda donde opera)</span>
+                            </label>
+                            <select name="sucursal_id" class="form-select rounded-3">
+                                <option value="">-- Sin sucursal fija / Todas (Recomendado para Admin) --</option>
+                                @foreach($sucursales as $suc)
+                                    <option value="{{ $suc->id }}" {{ old('sucursal_id', $usuario->sucursal_id) == $suc->id ? 'selected' : '' }}>
+                                        📍 {{ $suc->nombre }} ({{ $suc->ciudad ?? 'Lima' }}) {{ $suc->es_principal ? '★ Sede Principal' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted" style="font-size: 0.72rem;">Los cajeros asignados a una sucursal emitirán tickets con la dirección y datos de esa tienda</small>
                         </div>
 
                         <div class="d-flex justify-content-end gap-2">

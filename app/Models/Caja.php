@@ -10,6 +10,7 @@ class Caja extends Model
 
     protected $fillable = [
         'usuario_id',
+        'sucursal_id',
         'monto_inicial',
         'monto_final',
         'total_ventas',
@@ -33,6 +34,11 @@ class Caja extends Model
     public function usuario()
     {
         return $this->belongsTo(User::class, 'usuario_id');
+    }
+
+    public function sucursal()
+    {
+        return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 
     public function ventas()

@@ -10,6 +10,7 @@ class Venta extends Model
 
     protected $fillable = [
         'caja_id',
+        'sucursal_id',
         'socio_id',
         'total',
         'descuento',
@@ -26,6 +27,11 @@ class Venta extends Model
     public function caja()
     {
         return $this->belongsTo(Caja::class, 'caja_id');
+    }
+
+    public function sucursal()
+    {
+        return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 
     public function socio()

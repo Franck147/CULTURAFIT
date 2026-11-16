@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Caja;
 use App\Models\Configuracion;
+use App\Models\Sucursal;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,22 +19,26 @@ class CajaController extends Controller
         $cajaAbierta = Caja::obtenerCajaAbierta($user->id);
 
         if ($cajaAbierta) {
+            $cajaAbierta->load('sucursal');
             $totales = $cajaAbierta->calcularTotalesServidor();
             return view('caja.cierre', compact('config', 'cajaAbierta', 'totales'));
         }
 
-        $historial = Caja::with('usuario')
+        $historial = Caja::with(['usuario', 'sucursal'])
             ->orderBy('id', 'desc')
             ->limit(30)
             ->get();
 
-        return view('caja.apertura', compact('config', 'historial'));
+        $sucursales = Sucursal::where('estado', 'activo')->orderBy('nombre', 'asc')->get();
+
+        return view('caja.apertura', compact('config', 'historial', 'sucursales', 'user'));
     }
 
     public function abrir(Request $request)
     {
         $request->validate([
             'monto_inicial' => ['required', 'numeric', 'min:0'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
         ]);
 
         $user = Auth::user();
@@ -42,8 +47,11 @@ class CajaController extends Controller
             return redirect()->route('caja.index')->with('error', 'Ya tienes una caja abierta.');
         }
 
+        $sucursalId = $user->sucursal_id ?: ($request->sucursal_id ?: optional(Sucursal::principal())->id);
+
         Caja::create([
             'usuario_id' => $user->id,
+            'sucursal_id' => $sucursalId,
             'monto_inicial' => $request->monto_inicial,
             'fecha_apertura' => Carbon::now(),
             'estado' => 'abierta',

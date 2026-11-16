@@ -14,9 +14,16 @@
                             <h4 class="fw-extrabold text-dark mb-1">Catálogo de Productos</h4>
                             <span class="text-muted small">Selecciona un producto para agregarlo a la orden</span>
                         </div>
-                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-bold">
-                            <i class="fas fa-cash-register me-1"></i> Caja #{{ $cajaAbierta->id }}
-                        </span>
+                        <div class="d-flex align-items-center gap-2">
+                            @if($cajaAbierta->sucursal)
+                                <span class="badge bg-dark bg-opacity-10 text-dark px-3 py-2 rounded-pill fw-bold border">
+                                    <i class="fas fa-store text-primary me-1"></i> {{ $cajaAbierta->sucursal->nombre }}
+                                </span>
+                            @endif
+                            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-bold">
+                                <i class="fas fa-cash-register me-1"></i> Caja #{{ $cajaAbierta->id }}
+                            </span>
+                        </div>
                     </div>
 
                     <!-- Buscador y Filtro de Categorías -->
@@ -343,7 +350,12 @@
                     </div>
                     <div>
                         <h5 class="modal-title fw-bold text-dark mb-0" id="modalResumenVentaLabel">Resumen de la Venta</h5>
-                        <p class="text-muted small mb-0">Revisa y confirma los detalles antes de registrar la venta</p>
+                        <p class="text-muted small mb-0">
+                            Revisa y confirma los detalles antes de registrar la venta
+                            @if($cajaAbierta->sucursal)
+                                · <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25"><i class="fas fa-store me-1"></i>{{ $cajaAbierta->sucursal->nombre }}</span>
+                            @endif
+                        </p>
                     </div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>

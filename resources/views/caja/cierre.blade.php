@@ -12,6 +12,9 @@
                     <h3 class="fw-extrabold text-dark mb-1">Cierre y Arqueo de Turno #{{ $cajaAbierta->id }}</h3>
                     <p class="text-muted small mb-0">
                         Iniciado por <strong>{{ $cajaAbierta->usuario->nombre ?? 'Usuario' }}</strong> el {{ $cajaAbierta->fecha_apertura->format('d/m/Y \a \l\a\s H:i') }}
+                        @if($cajaAbierta->sucursal)
+                            · <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1"><i class="fas fa-store me-1"></i>{{ $cajaAbierta->sucursal->nombre }}</span>
+                        @endif
                     </p>
                 </div>
                 <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill fs-6 fw-bold">

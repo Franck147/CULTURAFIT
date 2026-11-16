@@ -11,6 +11,7 @@ use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProgresoController;
 use App\Http\Controllers\ReportesController;
 use App\Http\Controllers\SociosController;
+use App\Http\Controllers\SucursalesController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UsuariosController;
 use Illuminate\Support\Facades\Route;
@@ -123,6 +124,16 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('configuracion')->name('configuracion.')->group(function () {
             Route::get('/', [ConfiguracionController::class, 'index'])->name('index');
             Route::post('/actualizar', [ConfiguracionController::class, 'actualizar'])->name('actualizar');
+        });
+
+        // Sucursales y Tiendas Físicas
+        Route::prefix('sucursales')->name('sucursales.')->group(function () {
+            Route::get('/', [SucursalesController::class, 'index'])->name('index');
+            Route::get('/crear', [SucursalesController::class, 'crear'])->name('crear');
+            Route::post('/guardar', [SucursalesController::class, 'guardar'])->name('guardar');
+            Route::get('/editar/{id}', [SucursalesController::class, 'editar'])->name('editar');
+            Route::post('/actualizar/{id}', [SucursalesController::class, 'actualizar'])->name('actualizar');
+            Route::post('/cambiar-estado/{id}', [SucursalesController::class, 'cambiarEstado'])->name('cambiar-estado');
         });
 
         // Mantenimiento & Copias de Seguridad de BD

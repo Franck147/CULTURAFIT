@@ -123,17 +123,24 @@
 </div>
 
 <div class="ticket-wrapper" id="ticketPrintArea">
-    <!-- Encabezado Gym -->
+    <!-- Encabezado Tienda -->
     <div class="text-center">
         <h2 style="font-size: 15px; text-transform: uppercase;">{{ $config->nombre_sistema ?? 'CULTURA FIT' }}</h2>
+        @if($venta->sucursal)
+            <div style="font-weight: bold; font-size: 11px; margin-top: 1px;">{{ strtoupper($venta->sucursal->nombre) }}</div>
+        @endif
         @if(!empty($config->ruc))
             <div>RUC: {{ $config->ruc }}</div>
         @endif
-        @if(!empty($config->direccion))
-            <div>{{ $config->direccion }}</div>
+        @php
+            $direccionTicket = $venta->sucursal && !empty($venta->sucursal->direccion) ? $venta->sucursal->direccion : ($config->direccion ?? '');
+            $telefonoTicket = $venta->sucursal && !empty($venta->sucursal->telefono) ? $venta->sucursal->telefono : ($config->telefono ?? '');
+        @endphp
+        @if(!empty($direccionTicket))
+            <div>{{ $direccionTicket }}</div>
         @endif
-        @if(!empty($config->telefono))
-            <div>Tel: {{ $config->telefono }}</div>
+        @if(!empty($telefonoTicket))
+            <div>Tel: {{ $telefonoTicket }}</div>
         @endif
     </div>
 
@@ -143,6 +150,9 @@
     <div>
         <div><strong>TICKET:</strong> #{{ str_pad($venta->id, 6, '0', STR_PAD_LEFT) }}</div>
         <div><strong>FECHA:</strong> {{ $venta->fecha->format('d/m/Y H:i:s') }}</div>
+        @if($venta->sucursal)
+            <div><strong>SUCURSAL:</strong> {{ strtoupper($venta->sucursal->nombre) }}</div>
+        @endif
         <div><strong>CAJERO:</strong> {{ strtoupper($venta->caja->usuario->nombre ?? 'CAJA GENERAL') }}</div>
         <div><strong>CLIENTE:</strong> {{ strtoupper($venta->socio->nombre ?? 'VENTA DIRECTA') }}</div>
         @if($venta->socio && $venta->socio->dni)

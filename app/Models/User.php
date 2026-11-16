@@ -19,6 +19,7 @@ class User extends Authenticatable
         'password',
         'rol',
         'estado',
+        'sucursal_id',
     ];
 
     protected $hidden = [
@@ -53,5 +54,10 @@ class User extends Authenticatable
     public function gastos()
     {
         return $this->hasMany(Gasto::class, 'usuario_id');
+    }
+
+    public function sucursal()
+    {
+        return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 }

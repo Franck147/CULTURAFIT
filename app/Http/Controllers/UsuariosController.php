@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
+use App\Models\Sucursal;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,14 +14,15 @@ class UsuariosController extends Controller
     public function index()
     {
         $config = Configuracion::getInfo();
-        $usuarios = User::orderBy('id', 'desc')->get();
+        $usuarios = User::with('sucursal')->orderBy('id', 'desc')->get();
         return view('usuarios.index', compact('config', 'usuarios'));
     }
 
     public function crear()
     {
         $config = Configuracion::getInfo();
-        return view('usuarios.crear', compact('config'));
+        $sucursales = Sucursal::where('estado', 'activo')->orderBy('es_principal', 'desc')->orderBy('nombre', 'asc')->get();
+        return view('usuarios.crear', compact('config', 'sucursales'));
     }
 
     public function guardar(Request $request)
@@ -30,6 +32,7 @@ class UsuariosController extends Controller
             'email' => ['required', 'email', 'max:100', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
             'rol' => ['required', 'in:admin,cajero'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
         ]);
 
         User::create([
@@ -37,6 +40,7 @@ class UsuariosController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'rol' => $request->rol,
+            'sucursal_id' => $request->sucursal_id ?: null,
             'estado' => 'activo',
         ]);
 
@@ -47,7 +51,8 @@ class UsuariosController extends Controller
     {
         $config = Configuracion::getInfo();
         $usuario = User::findOrFail($id);
-        return view('usuarios.editar', compact('config', 'usuario'));
+        $sucursales = Sucursal::where('estado', 'activo')->orderBy('es_principal', 'desc')->orderBy('nombre', 'asc')->get();
+        return view('usuarios.editar', compact('config', 'usuario', 'sucursales'));
     }
 
     public function actualizar(Request $request, $id)
@@ -59,11 +64,13 @@ class UsuariosController extends Controller
             'email' => ['required', 'email', 'max:100', 'unique:users,email,' . $usuario->id],
             'password' => ['nullable', 'string', 'min:6'],
             'rol' => ['required', 'in:admin,cajero'],
+            'sucursal_id' => ['nullable', 'exists:sucursales,id'],
         ]);
 
         $usuario->nombre = $request->nombre;
         $usuario->email = $request->email;
         $usuario->rol = $request->rol;
+        $usuario->sucursal_id = $request->sucursal_id ?: null;
 
         if (!empty($request->password)) {
             $usuario->password = Hash::make($request->password);
