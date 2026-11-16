@@ -46,6 +46,9 @@ class PosController extends Controller
             $p->stock = $p->stockEnSucursal($sucursalId);
         }
 
+        // Primero lo que se puede vender; los agotados van al final (se conserva el orden alfabético)
+        $productos = $productos->sortBy(fn ($p) => $p->stock > 0 ? 0 : 1)->values();
+
         $categorias = Categoria::where('estado', 'activo')->orderBy('nombre', 'asc')->get();
         $socios = Socio::where('estado', 'activo')->orderBy('nombre', 'asc')->get();
 
@@ -59,6 +62,7 @@ class PosController extends Controller
             'metodo_pago' => ['required', 'in:efectivo,tarjeta,transferencia,yape_plin,yape,plin'],
             'socio_id' => ['nullable', 'exists:socios,id'],
             'descuento' => ['nullable', 'numeric', 'min:0'],
+            'monto_recibido' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
         ]);
 
         $user = Auth::user();
@@ -120,8 +124,21 @@ class PosController extends Controller
                 $descuento = min($subtotalBruto, max(0, (float)$request->descuento));
                 $totalFinal = max(0, $subtotalBruto - $descuento);
 
+                // Efectivo: registrar con cuánto pagó el cliente y su vuelto (calculado en el servidor)
+                $montoRecibido = null;
+                $vuelto = null;
+                if ($request->metodo_pago === 'efectivo' && (float)$request->monto_recibido > 0) {
+                    $montoRecibido = round((float)$request->monto_recibido, 2);
+                    if ($montoRecibido < round($totalFinal, 2)) {
+                        throw new \Exception('El monto recibido es menor al total de la venta.');
+                    }
+                    $vuelto = round($montoRecibido - $totalFinal, 2);
+                }
+
                 // 2. Crear Venta
                 $venta = Venta::create([
+                    'monto_recibido' => $montoRecibido,
+                    'vuelto' => $vuelto,
                     'caja_id' => $cajaAbierta->id,
                     'sucursal_id' => $sucursalId,
                     'socio_id' => $request->socio_id ?: null,
@@ -281,8 +298,9 @@ class PosController extends Controller
         }
 
         // 2. Si hay un API Token configurado para RENIEC (ej. apiperu.dev / apisperu)
-        $reniecToken = env('RENIEC_API_TOKEN', env('APIS_PERU_TOKEN', null));
-        $reniecUrl = env('RENIEC_API_URL', null);
+        // Se lee desde config (no env()) para que funcione con `php artisan config:cache`
+        $reniecToken = config('services.reniec.token');
+        $reniecUrl = config('services.reniec.url');
 
         if ($reniecToken && strlen($dni) === 8 && ctype_digit($dni)) {
             try {

@@ -15,6 +15,8 @@ class Venta extends Model
         'total',
         'descuento',
         'metodo_pago',
+        'monto_recibido',
+        'vuelto',
         'fecha',
     ];
 
@@ -22,6 +24,8 @@ class Venta extends Model
         'fecha' => 'datetime',
         'total' => 'decimal:2',
         'descuento' => 'decimal:2',
+        'monto_recibido' => 'decimal:2',
+        'vuelto' => 'decimal:2',
     ];
 
     public function caja()

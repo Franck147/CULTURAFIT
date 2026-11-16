@@ -17,6 +17,9 @@ class DatabaseSeeder extends Seeder
             SociosSeeder::class,
         ]);
 
+        // Debe ir después de productos: crea la sucursal principal y el inventario por sucursal
+        $this->call(SucursalesSeeder::class);
+
         // Sincronizar secuencias automáticas de PostgreSQL con los IDs importados
         if (config('database.default') === 'pgsql') {
             DB::statement("SELECT setval('categorias_id_seq', COALESCE((SELECT MAX(id) FROM categorias), 1))");

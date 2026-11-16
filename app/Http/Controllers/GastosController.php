@@ -63,6 +63,22 @@ class GastosController extends Controller
         ]);
 
         $gasto = Gasto::findOrFail($request->id);
+        $user = Auth::user();
+
+        // Los descuentos automáticos pertenecen a un ticket de venta: no se anulan a mano
+        if ($gasto->venta_id || $gasto->tipo === 'descuento_venta') {
+            return redirect()->route('gastos.index')->with('error', 'Este registro es un descuento ligado a un ticket de venta y no puede anularse manualmente.');
+        }
+
+        // SEGURIDAD: un cajero solo puede anular los gastos que él mismo registró
+        if (!$user->esAdmin() && (int)$gasto->usuario_id !== (int)$user->id) {
+            return redirect()->route('gastos.index')->with('error', 'Solo puedes anular los gastos que tú registraste.');
+        }
+
+        if ($gasto->estado === 'anulado') {
+            return redirect()->route('gastos.index')->with('error', 'Este gasto ya se encuentra anulado.');
+        }
+
         $gasto->update([
             'estado' => 'anulado',
             'motivo_anulacion' => $request->motivo_anulacion,

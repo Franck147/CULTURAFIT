@@ -8,7 +8,7 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-3">
         <div>
             <h3 class="fw-extrabold text-dark mb-1">Panel de Control</h3>
-            <p class="text-muted small mb-0">Bienvenido de nuevo, <strong>{{ auth()->user()->nombre }}</strong>. Resumen operativo de {{ date('F Y') }}.</p>
+            <p class="text-muted small mb-0">Bienvenido de nuevo, <strong>{{ auth()->user()->nombre }}</strong>. Resumen operativo de {{ now()->translatedFormat('F \\d\\e Y') }}.</p>
         </div>
         <div class="d-flex gap-2">
             @if(auth()->user()->esAdmin() || auth()->user()->esCajero())
@@ -17,19 +17,19 @@
                 </a>
             @endif
             <a href="{{ route('socios.crear') }}" class="btn btn-outline-primary rounded-pill px-3 py-2 fw-bold d-flex align-items-center gap-2">
-                <i class="fas fa-user-plus"></i> <span>Nuevo Socio</span>
+                <i class="fas fa-user-plus"></i> <span>Nuevo Cliente</span>
             </a>
         </div>
     </div>
 
     <!-- KPI Cards -->
     <div class="row g-3 mb-4">
-        <!-- Socios Activos -->
+        <!-- Clientes Activos -->
         <div class="col-12 col-sm-6 col-xl-3">
             <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden position-relative">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center justify-content-between mb-3">
-                        <span class="text-muted fw-bold small text-uppercase">Socios Activos</span>
+                        <span class="text-muted fw-bold small text-uppercase">Clientes Activos</span>
                         <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2">
                             <i class="fas fa-users fs-5"></i>
                         </div>
@@ -37,7 +37,7 @@
                     <h2 class="fw-extrabold mb-1 text-dark">{{ number_format($totalSocios) }}</h2>
                     <div class="d-flex align-items-center gap-1 small text-success">
                         <i class="fas fa-check-circle"></i>
-                        <span>En membresía vigente</span>
+                        <span>Registrados y habilitados</span>
                     </div>
                 </div>
                 <div class="position-absolute bottom-0 start-0 end-0 bg-primary" style="height: 4px;"></div>
@@ -51,7 +51,7 @@
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <span class="text-muted fw-bold small text-uppercase">Ingresos Mes</span>
                         <div class="rounded-3 bg-success bg-opacity-10 text-success p-2">
-                            <i class="fas fa-arrow-down-left fs-5"></i>
+                            <i class="fas fa-arrow-trend-up fs-5"></i>
                         </div>
                     </div>
                     <h2 class="fw-extrabold mb-1 text-success">{{ $config->moneda ?? 'S/' }} {{ number_format($ingresosMes, 2) }}</h2>
@@ -71,7 +71,7 @@
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <span class="text-muted fw-bold small text-uppercase">Gastos Mes</span>
                         <div class="rounded-3 bg-danger bg-opacity-10 text-danger p-2">
-                            <i class="fas fa-arrow-up-right fs-5"></i>
+                            <i class="fas fa-arrow-trend-down fs-5"></i>
                         </div>
                     </div>
                     <h2 class="fw-extrabold mb-1 text-danger">{{ $config->moneda ?? 'S/' }} {{ number_format($gastosMes, 2) }}</h2>
@@ -197,7 +197,7 @@
                                                 {{ $v->metodo_pago_nombre }}
                                             </span>
                                         </td>
-                                        <td class="fw-bold text-dark">{{ $config->moneda ?? 'S/' }} {{ number_format($v->total, 2) }}</td>
+                                        <td class="fw-bold text-dark text-nowrap">{{ $config->moneda ?? 'S/' }} {{ number_format($v->total, 2) }}</td>
                                         <td class="text-end">
                                             <a href="{{ route('ticket.ver', $v->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary rounded-pill" title="Imprimir Ticket">
                                                 <i class="fas fa-print"></i>

@@ -48,7 +48,7 @@ class SociosController extends Controller
 
         if ($request->hasFile('foto')) {
             $file = $request->file('foto');
-            $fileName = 'socio_' . time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+            $fileName = 'socio_' . time() . '_' . Str::random(6) . '.' . $file->extension();
             $file->move(public_path('img/socios'), $fileName);
             $data['foto'] = $fileName;
         }
@@ -86,7 +86,7 @@ class SociosController extends Controller
 
         if ($request->hasFile('foto')) {
             $file = $request->file('foto');
-            $fileName = 'socio_upd_' . time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+            $fileName = 'socio_upd_' . time() . '_' . Str::random(6) . '.' . $file->extension();
             $file->move(public_path('img/socios'), $fileName);
             $socio->foto = $fileName;
         }

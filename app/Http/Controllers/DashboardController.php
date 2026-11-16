@@ -27,7 +27,9 @@ class DashboardController extends Controller
 
         $ingresosQuery = Venta::whereBetween('fecha', [$inicioMes, $finMes]);
         $gastosQuery = Gasto::whereBetween('fecha', [$inicioMes->format('Y-m-d'), $finMes->format('Y-m-d')])
-            ->where('estado', '!=', 'anulado');
+            ->where('estado', '!=', 'anulado')
+            // Solo salidas reales de dinero: los descuentos de tickets ya están restados en el total de cada venta
+            ->whereNull('venta_id');
 
         if ($sucursalId) {
             $ingresosQuery->where('sucursal_id', $sucursalId);
@@ -82,8 +84,16 @@ class DashboardController extends Controller
             ->orderByRaw("mes_key ASC")
             ->get();
 
-        $chartLabels = $ventasMeses->pluck('mes_nombre')->toArray();
-        $chartData = $ventasMeses->pluck('total')->map(fn($v) => (float)$v)->toArray();
+        // Siempre 6 meses en el gráfico (los que no tienen ventas van en 0) y con nombres en español
+        $totalesPorMes = $ventasMeses->pluck('total', 'mes_key');
+        $chartLabels = [];
+        $chartData = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $mes = Carbon::now()->startOfMonth()->subMonths($i);
+            $chartLabels[] = ucfirst($mes->translatedFormat('M Y'));
+            $chartData[] = (float)($totalesPorMes[$mes->format('Y-m')] ?? 0);
+        }
 
         // 5. Productos más vendidos
         $topProductosQuery = DetalleVenta::select('producto_id', DB::raw('SUM(cantidad) as total_qty'))

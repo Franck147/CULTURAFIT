@@ -225,10 +225,10 @@
                         </div>
                     </div>
                     <h3 class="fw-extrabold text-danger mb-1">
-                        {{ $config->moneda ?? 'S/' }} {{ number_format($totalGastos, 2) }}
+                        {{ $config->moneda ?? 'S/' }} {{ number_format($gastosOperativos, 2) }}
                     </h3>
                     <div class="d-flex justify-content-between align-items-center text-muted small">
-                        <span>{{ count($gastos) }} egresos registrados</span>
+                        <span>{{ $gastos->whereNull('venta_id')->count() }} salidas de caja</span>
                         <span class="badge bg-danger bg-opacity-10 text-danger">Salidas</span>
                     </div>
                 </div>

@@ -39,7 +39,7 @@ class ConfiguracionController extends Controller
 
         if ($request->hasFile('logo')) {
             $file = $request->file('logo');
-            $fileName = 'logo_empresa.' . $file->getClientOriginalExtension();
+            $fileName = 'logo_empresa.' . $file->extension();
             $file->move(public_path('img'), $fileName);
             $data['logo'] = $fileName;
         }

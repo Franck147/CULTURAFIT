@@ -122,13 +122,15 @@
     </div>
 </div>
 
-<script>
-const modalAnular = new bootstrap.Modal(document.getElementById('modalAnularGasto'));
+@endsection
 
+@push('scripts')
+<script>
+// Va en el stack de scripts: así se ejecuta después de que el layout carga Bootstrap
 function abrirModalAnular(id, desc) {
     document.getElementById('anular_id').value = id;
     document.getElementById('anular_desc').textContent = desc;
-    modalAnular.show();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAnularGasto')).show();
 }
 </script>
-@endsection
+@endpush

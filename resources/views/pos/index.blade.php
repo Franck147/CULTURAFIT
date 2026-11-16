@@ -31,11 +31,11 @@
                         <div class="col-12 col-md-6">
                             <div class="input-group">
                                 <span class="input-group-text bg-light border-end-0 text-muted"><i class="fas fa-search"></i></span>
-                                <input type="text" id="posSearch" class="form-control bg-light border-start-0" placeholder="Buscar por nombre o código de barra...">
+                                <input type="text" id="posSearch" class="form-control bg-light border-start-0" placeholder="Buscar producto o código" aria-label="Buscar producto por nombre o código">
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
-                            <div class="d-flex gap-1 overflow-x-auto pb-1" id="categoryPills">
+                            <div class="d-flex gap-1 overflow-x-auto pb-1 pos-cat-scroll" id="categoryPills">
                                 <button class="btn btn-sm btn-primary rounded-pill px-3 cat-filter active" data-cat="all">Todas</button>
                                 @foreach($categorias as $cat)
                                     <button class="btn btn-sm btn-light border rounded-pill px-3 cat-filter text-nowrap" data-cat="{{ $cat->id }}">{{ $cat->nombre }}</button>
@@ -46,7 +46,7 @@
                 </div>
 
                 <!-- Grid de Productos -->
-                <div class="card-body p-4 pt-2 flex-grow-1 overflow-y-auto" style="max-height: calc(100vh - 270px);">
+                <div class="card-body p-4 pt-2 flex-grow-1 overflow-y-auto pos-grid-scroll">
                     <div class="row g-3" id="productGrid">
                         @forelse($productos as $p)
                             <div class="col-6 col-sm-4 col-md-3 product-item" data-cat="{{ $p->categoria_id }}" data-name="{{ strtolower($p->nombre) }}" data-code="{{ strtolower($p->codigo ?? '') }}">
@@ -70,7 +70,7 @@
                                                 <span class="text-muted" style="font-size: 0.68rem;">{{ $p->codigo }}</span>
                                             @endif
                                         </div>
-                                        <h6 class="fw-bold text-dark text-truncate mb-1" style="font-size: 0.88rem;" title="{{ $p->nombre }}">{{ $p->nombre }}</h6>
+                                        <h6 class="fw-bold text-dark pos-product-name mb-1" title="{{ $p->nombre }}">{{ $p->nombre }}</h6>
                                         <div class="fw-extrabold text-primary fs-6">{{ $config->moneda ?? 'S/' }} {{ number_format($p->precio_venta, 2) }}</div>
                                     </div>
                                 </div>
@@ -87,7 +87,7 @@
         </div>
 
         <!-- Columna Derecha: Carrito y Checkout -->
-        <div class="col-12 col-xl-4">
+        <div class="col-12 col-xl-4" id="posCartColumn" style="scroll-margin-top: 84px;">
             <div class="card border-0 shadow-sm rounded-4 h-100 d-flex flex-column">
                 <div class="card-header bg-transparent border-0 p-4 pb-2">
                     <div class="d-flex align-items-center justify-content-between mb-3">
@@ -117,7 +117,7 @@
                             <input type="text" 
                                    id="posDniSearch" 
                                    class="form-control border-start-0 border-end-0 ps-1" 
-                                   placeholder="Ingresa DNI para buscar cliente..." 
+                                   placeholder="DNI del cliente" aria-label="DNI del cliente" 
                                    maxlength="20" 
                                    autocomplete="off"
                                    oninput="handlePosDniInputChange(this)"
@@ -225,8 +225,18 @@
     </div>
 </div>
 
-<!-- Modal Registro Rápido de Cliente en POS -->
-<div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-labelledby="modalNuevoClienteLabel" aria-hidden="true">
+<!-- Barra fija de cobro (solo pantallas pequeñas): lleva al carrito sin recorrer todo el catálogo -->
+<div class="pos-mobile-bar d-xl-none" id="posMobileBar">
+    <div class="lh-sm">
+        <div class="small text-muted fw-semibold" id="posMobileCount">Carrito vacío</div>
+        <div class="fw-extrabold fs-5 text-dark" id="posMobileTotal">{{ $config->moneda ?? 'S/' }} 0.00</div>
+    </div>
+    <button type="button" class="btn btn-primary rounded-pill fw-bold px-4 py-2 d-flex align-items-center gap-2 text-nowrap flex-shrink-0" id="posMobileGo">
+        <i class="fas fa-shopping-cart"></i> Ver y cobrar
+    </button>
+</div>
+
+<!-- Modal Registro Rápido de Cliente en POS --><div class="modal fade" id="modalNuevoCliente" tabindex="-1" aria-labelledby="modalNuevoClienteLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             <div class="modal-header border-0 pb-0 pt-4 px-4">
@@ -462,8 +472,45 @@
 </div>
 
 <style>
-    .product-card {
-        cursor: pointer;
+    /* Nombre de producto en 2 líneas en vez de cortarlo en una */
+    .pos-product-name {
+        font-size: 0.86rem;
+        line-height: 1.25;
+        min-height: 2.5em;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    /* Filtro de categorías: desliza sin mostrar la barra nativa */
+    .pos-cat-scroll { scrollbar-width: none; }
+    .pos-cat-scroll::-webkit-scrollbar { display: none; }
+    /* El catálogo hace scroll interno para que el carrito quede siempre a un paso */
+    .pos-grid-scroll { max-height: calc(100vh - 270px); }
+    @media (max-width: 1199.98px) {
+        .pos-grid-scroll { max-height: max(340px, calc(100vh - 360px)); }
+        body { padding-bottom: 76px; }
+    }
+    /* Barra fija de cobro para pantallas pequeñas */
+    .pos-mobile-bar {
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        z-index: 1020;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+        background: #ffffff;
+        border-top: 1px solid #E2E8F0;
+        box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
+        transition: transform 0.25s ease;
+    }
+    .pos-mobile-bar.is-hidden { transform: translateY(110%); }
+    @media (prefers-reduced-motion: reduce) {
+        .pos-mobile-bar, .product-card { transition: none !important; }
+    }
+    .product-card {        cursor: pointer;
         transition: all 0.2s ease;
         border-color: #E2E8F0 !important;
     }
@@ -632,16 +679,44 @@ function renderCart() {
     updateTotals();
 }
 
-function updateTotals() {
-    const subtotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+// Barra fija de cobro: lleva al carrito y se oculta cuando el botón de cobro ya está a la vista
+document.addEventListener('DOMContentLoaded', function () {
+    const bar = document.getElementById('posMobileBar');
+    const go = document.getElementById('posMobileGo');
+    const cartColumn = document.getElementById('posCartColumn');
+    const checkoutBtn = document.getElementById('btnCheckout');
+    if (!bar || !cartColumn) return;
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    go.addEventListener('click', function () {
+        cartColumn.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    });
+
+    if ('IntersectionObserver' in window && checkoutBtn) {
+        new IntersectionObserver(function (entries) {
+            bar.classList.toggle('is-hidden', entries[0].isIntersecting);
+        }, { threshold: 0.6 }).observe(checkoutBtn);
+    }
+});
+
+function updateTotals() {    const subtotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
     const discount = parseFloat(document.getElementById('cartDiscount').value) || 0;
     const total = Math.max(0, subtotal - discount);
 
     document.getElementById('cartSubtotalText').textContent = `${moneda} ${subtotal.toFixed(2)}`;
     document.getElementById('cartTotalText').textContent = `${moneda} ${total.toFixed(2)}`;
 
-    calculateChange();
-}
+    // Barra fija de cobro en móvil
+    const mobileTotal = document.getElementById('posMobileTotal');
+    if (mobileTotal) {
+        const unidades = cart.reduce((acc, i) => acc + i.qty, 0);
+        mobileTotal.textContent = `${moneda} ${total.toFixed(2)}`;
+        document.getElementById('posMobileCount').textContent = unidades === 0
+            ? 'Carrito vacío'
+            : `${unidades} ${unidades === 1 ? 'producto' : 'productos'}`;
+    }
+
+    calculateChange();}
 
 function handlePaymentMethodChange() {
     const isEfectivo = document.getElementById('pagoEfectivo').checked;
@@ -825,7 +900,9 @@ function confirmarVentaFinal() {
         carrito: JSON.stringify(cart.map(i => ({ id: i.id, cantidad: i.qty }))),
         metodo_pago: metodoPago,
         socio_id: socioId,
-        descuento: discount
+        descuento: discount,
+        // Solo en efectivo: con cuánto pagó el cliente (el vuelto lo calcula el servidor)
+        monto_recibido: metodoPago === 'efectivo' ? (parseFloat(document.getElementById('cashReceived').value) || null) : null
     };
 
     fetch('{{ route("pos.procesar") }}', {

@@ -72,8 +72,9 @@
         /* Logo badge inside form (Centered) */
         .form-logo-badge {
             background: #0B0F19;
-            padding: 12px 28px;
-            border-radius: 20px;
+            padding: 0;
+            overflow: hidden;
+            border-radius: 18px;
             display: inline-block;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.08);
             margin-bottom: 1.5rem;
@@ -85,9 +86,10 @@
         }
 
         .form-logo-img {
-            max-height: 48px;
-            width: auto;
-            object-fit: contain;
+            height: 84px;
+            width: 220px;
+            max-width: 100%;
+            object-fit: cover;
             display: block;
         }
 
@@ -339,7 +341,8 @@
                 </button>
             </form>
 
-            <!-- Quick Demo Credentials -->
+            <!-- Accesos de demostración: SOLO en entorno local, nunca en producción -->
+            @env('local')
             <div class="demo-section">
                 <div class="demo-title">Acceso rápido para demostración</div>
                 <div class="demo-pills-row">
@@ -353,6 +356,7 @@
                     </button>
                 </div>
             </div>
+            @endenv
 
             <!-- Footer copyright -->
             <div class="text-center text-muted small mt-4 pt-2">

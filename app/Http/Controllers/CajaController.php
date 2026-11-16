@@ -74,6 +74,12 @@ class CajaController extends Controller
         ]);
 
         $caja = Caja::findOrFail($request->caja_id);
+        $user = Auth::user();
+
+        // SEGURIDAD: solo el dueño del turno (o un administrador) puede cerrar esta caja
+        if ((int)$caja->usuario_id !== (int)$user->id && !$user->esAdmin()) {
+            return redirect()->route('caja.index')->with('error', 'No puedes cerrar la caja de otro usuario.');
+        }
 
         if ($caja->estado !== 'abierta') {
             return redirect()->route('caja.index')->with('error', 'Esta caja ya se encuentra cerrada.');

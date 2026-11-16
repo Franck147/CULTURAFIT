@@ -60,8 +60,8 @@
                                 <td>
                                     <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold">{{ $p->categoria->nombre ?? 'Sin Categoría' }}</span>
                                 </td>
-                                <td class="text-muted small">{{ $config->moneda ?? 'S/' }} {{ number_format($p->precio_compra, 2) }}</td>
-                                <td class="fw-bold text-dark">{{ $config->moneda ?? 'S/' }} {{ number_format($p->precio_venta, 2) }}</td>
+                                <td class="text-muted small text-nowrap">{{ $config->moneda ?? 'S/' }} {{ number_format($p->precio_compra, 2) }}</td>
+                                <td class="fw-bold text-dark text-nowrap">{{ $config->moneda ?? 'S/' }} {{ number_format($p->precio_venta, 2) }}</td>
                                 <td>
                                     @if($sucursalActivaId)
                                         @php $stockLocal = $p->stockEnSucursal($sucursalActivaId); @endphp

@@ -82,7 +82,7 @@ class InventarioController extends Controller
 
         if ($request->hasFile('foto')) {
             $file = $request->file('foto');
-            $fileName = 'prod_' . time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+            $fileName = 'prod_' . time() . '_' . Str::random(6) . '.' . $file->extension();
             $file->move(public_path('img/productos'), $fileName);
             $data['foto'] = $fileName;
         }

@@ -112,11 +112,16 @@ class MantenimientoController extends Controller
                     2 => ['pipe', 'w'],
                 ];
 
-                $env = array_merge($_ENV, [
-                    'PGPASSWORD' => $dbPass,
+                // getenv() trae el entorno completo del sistema (PATH, SystemRoot...). Con solo $_ENV,
+                // pg_dump no puede abrir la conexión en Windows y el respaldo caía siempre al modo alternativo.
+                $env = array_merge(getenv(), [
+                    'PGPASSWORD' => (string) $dbPass,
                 ]);
 
-                $cmd = "\"{$exe}\" -h {$dbHost} -p {$dbPort} -U {$dbUser} -F p --clean --if-exists {$dbName}";
+                $cmd = "\"{$exe}\" -h " . escapeshellarg((string) $dbHost)
+                    . ' -p ' . escapeshellarg((string) $dbPort)
+                    . ' -U ' . escapeshellarg((string) $dbUser)
+                    . ' -F p --clean --if-exists ' . escapeshellarg((string) $dbName);
                 $process = @proc_open($cmd, $descriptors, $pipes, null, $env);
 
                 if (is_resource($process)) {
@@ -136,11 +141,14 @@ class MantenimientoController extends Controller
         // Si pg_dump no pudo ejecutarse, respaldo mediante motor PHP nativo
         if (!$dumpExitoso) {
             try {
-                $tablas = [
+                // Orden que respeta las llaves foráneas al restaurar (padres antes que hijos)
+                $ordenBase = [
+                    'sucursales',
                     'users',
                     'configuracion',
                     'categorias',
                     'productos',
+                    'inventario_sucursales',
                     'socios',
                     'cajas',
                     'ventas',
@@ -149,6 +157,17 @@ class MantenimientoController extends Controller
                     'medidas',
                     'rutinas',
                 ];
+
+                // Se toman TODAS las tablas reales de la base, para que una tabla nueva nunca quede fuera
+                $existentes = collect(DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"))
+                    ->pluck('table_name')
+                    ->all();
+                $omitir = ['migrations', 'failed_jobs', 'password_reset_tokens', 'personal_access_tokens'];
+
+                $tablas = array_values(array_unique(array_merge(
+                    array_values(array_intersect($ordenBase, $existentes)),
+                    array_values(array_diff($existentes, $ordenBase, $omitir))
+                )));
 
                 $sqlContent = "-- =====================================================\n";
                 $sqlContent .= "-- CULTURA FIT - Copia de Seguridad de Base de Datos\n";
@@ -173,6 +192,12 @@ class MantenimientoController extends Controller
                         }
                         $sqlContent .= "\n";
                     }
+                }
+
+                // Reajustar los contadores de ID para que, tras restaurar, los nuevos registros no choquen
+                $sqlContent .= "-- Reajuste de secuencias\n";
+                foreach ($tablas as $tabla) {
+                    $sqlContent .= "SELECT setval(pg_get_serial_sequence('{$tabla}', 'id'), COALESCE((SELECT MAX(id) FROM {$tabla}), 1));\n";
                 }
 
                 File::put($fullPath, $sqlContent);

@@ -31,4 +31,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'reniec' => [
+        'token' => env('RENIEC_API_TOKEN', env('APIS_PERU_TOKEN')),
+        'url' => env('RENIEC_API_URL'),
+    ],
+
 ];

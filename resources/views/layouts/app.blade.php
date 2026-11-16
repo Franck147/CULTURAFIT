@@ -31,7 +31,7 @@
         }
         #sidebar-wrapper {
             width: 270px;
-            min-height: 100vh;
+            height: 100vh;
             background: #ffffff;
             border-right: 1px solid #E2E8F0;
             transition: all 0.25s ease-out;
@@ -43,9 +43,10 @@
             background: #0B0F19;
             width: 100%;
             max-width: 238px;
-            height: 50px;
+            height: 56px;
             border-radius: 12px;
-            padding: 6px 16px;
+            padding: 0;
+            overflow: hidden;
             margin: 0 auto;
             display: flex;
             align-items: center;
@@ -58,10 +59,9 @@
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.12);
         }
         .sidebar-logo-img {
-            max-height: 38px;
-            max-width: 100%;
-            width: auto;
-            object-fit: contain;
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
             display: block;
             margin: 0 auto;
         }
@@ -76,14 +76,14 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            padding: 10px 16px;
+            padding: 8px 14px;
             border-radius: 12px;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             color: #64748B;
             text-decoration: none;
-            transition: all 0.2s ease;
-            margin-bottom: 4px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            margin-bottom: 2px;
         }
         .nav-link-custom:hover {
             background-color: #F1F5F9;
@@ -100,8 +100,18 @@
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: #94A3B8;
-            padding: 14px 16px 6px;
+            padding: 10px 14px 4px;
         }
+        /* El menú ocupa el espacio libre entre la cabecera y "Cerrar sesión"; nunca queda tapado */
+        .sidebar-nav {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #CBD5E1 transparent;
+        }
+        .sidebar-nav::-webkit-scrollbar { width: 6px; }
+        .sidebar-nav::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 6px; }
         @media (max-width: 991.98px) {
             #sidebar-wrapper {
                 margin-left: -270px;
@@ -171,7 +181,7 @@
     <!-- Sidebar -->
     <aside id="sidebar-wrapper" class="d-flex flex-column">
         <!-- Logo / Marca -->
-        <div class="px-3 py-3 border-bottom position-relative d-flex align-items-center justify-content-center" style="min-height: 72px;">
+        <div class="px-3 py-2 border-bottom position-relative d-flex align-items-center justify-content-center">
             <a href="{{ route('dashboard') }}" class="d-flex align-items-center justify-content-center text-decoration-none w-100">
                 @if(!empty($config->logo) && file_exists(public_path('img/' . $config->logo)))
                     <div class="sidebar-logo-pill">
@@ -190,8 +200,8 @@
         </div>
 
         <!-- Usuario Resumen -->
-        <div class="px-4 py-3 bg-light bg-opacity-50 border-bottom d-flex align-items-center gap-3">
-            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 42px; height: 42px; font-size: 1.1rem;">
+        <div class="px-3 py-2 bg-light bg-opacity-50 border-bottom d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold shadow-sm flex-shrink-0" style="width: 38px; height: 38px; font-size: 1rem;">
                 {{ strtoupper(substr(auth()->user()->nombre ?? 'U', 0, 1)) }}
             </div>
             <div class="overflow-hidden">
@@ -225,7 +235,7 @@
                     @csrf
                     <select name="sucursal_contexto_id" class="form-select form-select-sm rounded-pill border fw-bold text-dark shadow-xs" onchange="this.form.submit()" style="font-size: 0.8rem; background-color: #F8FAFC; cursor: pointer;">
                         <option value="todas" {{ empty($sucursalSeleccionadaId) ? 'selected' : '' }}>
-                            🌐 Todas las Sucursales (Global)
+                            🌐 Todas las sucursales
                         </option>
                         @foreach($todasLasSucursales as $sucOpt)
                             <option value="{{ $sucOpt->id }}" {{ $sucursalSeleccionadaId == $sucOpt->id ? 'selected' : '' }}>
@@ -248,7 +258,7 @@
         @endif
 
         <!-- Navegación Menú -->
-        <div class="p-3 overflow-y-auto flex-grow-1" style="max-height: calc(100vh - 190px);">
+        <div class="px-3 py-2 sidebar-nav">
             <div class="nav-section-title">General</div>
             <a href="{{ route('dashboard') }}" class="nav-link-custom {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="fas fa-home fa-fw"></i> Dashboard
@@ -302,7 +312,7 @@
         </div>
 
         <!-- Logout Bottom -->
-        <div class="p-3 border-top mt-auto bg-white">
+        <div class="px-3 py-2 border-top mt-auto bg-white">
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger w-100 rounded-pill fw-bold btn-sm py-2 d-flex align-items-center justify-content-center gap-2">
@@ -334,7 +344,7 @@
 
         <!-- Topbar Mobile -->
         <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 py-3 d-lg-none sticky-top shadow-sm">
-            <button class="btn btn-light rounded-3" id="menu-toggle">
+            <button class="btn btn-light rounded-3" id="menu-toggle" aria-label="Abrir menú">
                 <i class="fas fa-bars"></i>
             </button>
             <span class="fw-bold fs-6 ms-2">{{ $config->nombre_sistema ?? 'CULTURA FIT' }}</span>
@@ -412,6 +422,10 @@
                 wrapper.classList.remove('toggled');
             });
         }
+
+        // Deja visible la opción activa del menú si quedó fuera de la vista
+        const activeLink = document.querySelector('.sidebar-nav .nav-link-custom.active');
+        if (activeLink) { activeLink.scrollIntoView({ block: 'nearest' }); }
 
         // Suppress DataTables alert popups
         if (typeof $.fn.dataTable !== 'undefined') {

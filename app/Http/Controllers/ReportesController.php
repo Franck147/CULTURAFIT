@@ -205,6 +205,8 @@ class ReportesController extends Controller
             'cantVentas',
             'ticketPromedio',
             'totalGastos',
+            'gastosOperativos',
+            'gastosDescuentos',
             'utilidadNeta',
             'margenRentabilidad',
             'sociosActivos',

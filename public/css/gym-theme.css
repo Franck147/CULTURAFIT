@@ -3,6 +3,9 @@
 :root {
     /* Primary Gym Colors (Updated to match new theme) */
     --gym-primary: #6366F1; /* Indigo/Purple */
+    /* Alinea las utilidades de Bootstrap (bg-primary, text-primary, badges) con el índigo del tema */
+    --bs-primary: #6366F1;
+    --bs-primary-rgb: 99, 102, 241;
     --gym-primary-hover: #4F46E5;
     --gym-primary-light: #E0E7FF;
     
@@ -39,7 +42,7 @@
 
 body {
     background-color: var(--gym-bg-light) !important;
-    font-family: 'Inter', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     color: var(--gym-text-dark);
 }
 
@@ -70,7 +73,7 @@ body {
     background-color: var(--gym-primary) !important;
     border-color: var(--gym-primary) !important;
     color: var(--gym-text-light) !important;
-    box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2), 0 2px 4px -1px rgba(249, 115, 22, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.22), 0 2px 4px -1px rgba(99, 102, 241, 0.12);
 }
 .btn-primary:hover, .btn-primary:focus {
     background-color: var(--gym-primary-hover) !important;
@@ -496,4 +499,32 @@ body {
 .payment-method-selector .btn-check:checked + .btn-payment,
 .payment-method-selector .btn-check:checked + .btn-payment i {
     color: #FFFFFF !important;
+}
+
+/* =========================================================================
+   AJUSTES DE USO EN MÓVIL
+   ========================================================================= */
+
+/* Botones de acción redondos: área táctil mínima cómoda para el dedo */
+.btn-sm.rounded-circle {
+    min-width: 38px;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 575.98px) {
+    /* Buscador y selector de DataTables a todo el ancho, sin cortarse */
+    .dataTables_wrapper .dataTables_filter,
+    .dataTables_wrapper .dataTables_length { text-align: left !important; }
+    .dataTables_wrapper .dataTables_filter label { display: flex !important; width: 100%; }
+    .dataTables_wrapper .dataTables_filter input {
+        flex: 1 1 auto;
+        min-width: 0 !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+    main.p-4 { padding: 1rem !important; }
+    .card-body.p-4 { padding: 1rem !important; }
 }
